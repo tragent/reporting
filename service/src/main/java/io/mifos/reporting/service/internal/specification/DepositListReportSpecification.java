@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import java.text.DecimalFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,26 +23,23 @@ import java.util.stream.Collectors;
 @Report(category = "Deposit", identifier = "Listing")
 public class DepositListReportSpecification implements ReportSpecification {
 
-    private static final String CUSTOMER = "Customer";
-    private static final String FIRST_NAME = "First name";
-    private static final String MIDDLE_NAME = "Middle name";
-    private static final String LAST_NAME = "Last name";
-    private static final String EMPLOYEE = "Employee";
-    private static final String ACCOUNT_NUMBER = "Account number";
-    private static final String ACCOUNT_TYPE = "Account type";
-    private static final String STATE = "State";
+    private static final String CUSTOMER = "Customer Account";
+    private static final String FIRST_NAME = "First Name";
+    private static final String MIDDLE_NAME = "Middle Name";
+    private static final String LAST_NAME = "Last Name";
+    private static final String EMPLOYEE = "Created By";
+    private static final String ACCOUNT_NUMBER = "Deposit Account";
+    private static final String ACCOUNT_TYPE = "Account Type";
+    private static final String STATE = "Status";
     private static final String OFFICE = "Office";
-    private static final String DATE_RANGE = "Date created";
-    private static final String LAST_ACCOUNT_ACTIVITY = "Last account activity";
+    private static final String DATE_RANGE = "Date Created";
 
     private final EntityManager entityManager;
 
     private final Logger logger;
 
     private final HashMap<String, String> customerColumnMapping = new HashMap<>();
-    private final HashMap<String, String> accountColumnMapping = new HashMap<>();
-    private final HashMap<String, String> officeColumnMapping = new HashMap<>();
-    private final HashMap<String, String> employeeColumnMapping = new HashMap<>();
+    private final HashMap<String, String> depositAccountColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
 
@@ -75,14 +73,13 @@ public class DepositListReportSpecification implements ReportSpecification {
         reportPage.setDescription(reportDefinition.getDescription());
         reportPage.setHeader(this.createHeader(reportRequest.getDisplayableFields()));
 
-        final Query depositAccountQuery = this.entityManager.createNativeQuery(this.buildAccountQuery(reportRequest, pageIndex, size));
+        final Query customerQuery = this.entityManager.createNativeQuery(this.buildCustomerQuery(reportRequest, pageIndex, size));
 
-        final List<?> depositAccountResultList = depositAccountQuery.getResultList();
-        reportPage.setRows(this.buildRows(reportRequest, depositAccountResultList));
-
+        final List<?> customerResultList = customerQuery.getResultList();
+        reportPage.setRows(this.buildRows(reportRequest, customerResultList));
 
         reportPage.setHasMore(
-                !this.entityManager.createNativeQuery(this.buildAccountQuery(reportRequest, pageIndex + 1, size))
+                !this.entityManager.createNativeQuery(this.buildCustomerQuery(reportRequest, pageIndex + 1, size))
                         .getResultList().isEmpty()
         );
 
@@ -119,21 +116,16 @@ public class DepositListReportSpecification implements ReportSpecification {
         this.customerColumnMapping.put(FIRST_NAME, "cst.given_name");
         this.customerColumnMapping.put(MIDDLE_NAME, "cst.middle_name");
         this.customerColumnMapping.put(LAST_NAME, "cst.surname");
+        this.customerColumnMapping.put(OFFICE, "cst.assigned_office");
 
-        this.officeColumnMapping.put(OFFICE, "cst.assigned_office");
-
-        this.employeeColumnMapping.put(EMPLOYEE, "pi.created_by");
-
-        this.accountColumnMapping.put(ACCOUNT_NUMBER, "pi.customer_identifier, pi.account_identifier");
-        this.accountColumnMapping.put(STATE, " pi.a_state");
-        this.accountColumnMapping.put(ACCOUNT_TYPE, "pi.product_definition_id");
-        this.accountColumnMapping.put(LAST_ACCOUNT_ACTIVITY, "acc_entry.transaction_date, acc_entry.message, acc_entry.amount, acc_entry.balance");
-        this.accountColumnMapping.put(DATE_RANGE, "pi.created_on");
+        this.depositAccountColumnMapping.put(EMPLOYEE, "pi.created_by");
+        this.depositAccountColumnMapping.put(ACCOUNT_NUMBER, "pi.account_identifier");
+        this.depositAccountColumnMapping.put(STATE, "pi.a_state");
+        this.depositAccountColumnMapping.put(ACCOUNT_TYPE, "pi.product_definition_id");
+        this.depositAccountColumnMapping.put(DATE_RANGE, "pi.created_on");
 
         this.allColumnMapping.putAll(customerColumnMapping);
-        this.allColumnMapping.putAll(officeColumnMapping);
-        this.allColumnMapping.putAll(employeeColumnMapping);
-        this.allColumnMapping.putAll(accountColumnMapping);
+        this.allColumnMapping.putAll(depositAccountColumnMapping);
     }
     private Header createHeader(final List<DisplayableField> displayableFields) {
         final Header header = new Header();
@@ -146,13 +138,14 @@ public class DepositListReportSpecification implements ReportSpecification {
         return header;
     }
 
+    private List<Row> buildRows(final ReportRequest reportRequest, final List<?> customerResultList) {
+        final ArrayList<Row> rows = new ArrayList<>();
 
-    private List<Row> buildRows(final ReportRequest reportRequest, final List<?> depositAccountResultList) {
-        final ArrayList<Row> rows =new ArrayList<>();
-        depositAccountResultList.forEach(result -> {
+        customerResultList.forEach(result -> {
+            this.logger.info("Result Row: {0} ", result);
             final Row row = new Row();
             row.setValues(new ArrayList<>());
-            //Get the customer identifier to use for join queries.
+
             final String customerIdentifier;
 
             if (result instanceof Object[]) {
@@ -162,86 +155,40 @@ public class DepositListReportSpecification implements ReportSpecification {
 
                 for (final Object resultValue : resultValues) {
                     final Value value = new Value();
-                    if (resultValue != null)
+                    if (resultValue != null) {
                         value.setValues(new String[]{resultValue.toString()});
-                    else {
+                    } else {
                         value.setValues(new String[]{});
                     }
 
                     row.getValues().add(value);
                 }
             } else {
-
                 customerIdentifier = result.toString();
-                final Value value;
-                value = new Value();
-                value.setValues(new String[]{result.toString()});
-                row.getValues().add(value);
-            }
 
-            final String accountIdentifier;
-
-            if (result instanceof Object[]) {
-                final Object[] resultValues = (Object[]) result;
-
-                accountIdentifier = resultValues[2].toString();
-
-                for (final Object resultValue : resultValues) {
-                    final Value value;
-                    value = new Value();
-                    if (resultValue != null)
-                        value.setValues(new String[]{resultValue.toString()});
-                    else {
-                        value.setValues(new String[]{});
-                    }
-
-                    row.getValues().add(value);
-                }
-            } else {
-
-                accountIdentifier = result.toString();
                 final Value value = new Value();
                 value.setValues(new String[]{result.toString()});
                 row.getValues().add(value);
             }
 
-            final Query customerQuery = this.entityManager.createNativeQuery(this.buildCustomerQuery(reportRequest, customerIdentifier));
-            final List<?> accountResultList = customerQuery.getResultList();
+            this.logger.info("Customer ID: {0}", customerIdentifier);
+
+            final DecimalFormat decimalFormat = new DecimalFormat("0.00");
+            final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
+            final List<?> accountResultList = accountQuery.getResultList();
             final ArrayList<String> values = new ArrayList<>();
-            accountResultList.forEach(customerResult -> {
-                if (customerResult instanceof Object[]) {
-                    final Object[] customerResultValues = (Object[]) customerResult;
-                    final String customerValue = customerResultValues[0].toString();
-                    values.add(customerValue);
+            accountResultList.forEach(accountResult -> {
+                if (accountResult instanceof Object[]) {
+                    final Object[] accountResultValues = (Object[]) accountResult;
+                    final String accountValue = accountResultValues[0].toString() + " (" +
+                            decimalFormat.format(Double.valueOf(accountResultValues[1].toString())) + ")";
+                    values.add(accountValue);
+                    this.logger.info("Account Values: {0} ", accountResultValues);
                 }
             });
-            final Value customerValue = new Value();
-            customerValue.setValues(values.toArray(new String[values.size()]));
-            row.getValues().add(customerValue);
-
-            final String officeQueryString = this.buildOfficeQuery(reportRequest, customerIdentifier);
-            if (officeQueryString != null) {
-                final Query officeQuery;
-                officeQuery = this.entityManager.createNativeQuery(officeQueryString);
-                final List<?> resultList = officeQuery.getResultList();
-                final Value officeValue = new Value();
-                officeValue.setValues(new String[]{resultList.get(0).toString()});
-                row.getValues().add(officeValue);
-            }
-
-            final Query lastAccountActivivityQueryString = this.entityManager.createNativeQuery(this.buildLastAccountActivity(reportRequest, accountIdentifier));
-            final List<?> lastActivityResultList = lastAccountActivivityQueryString.getResultList();
-            final ArrayList<String> val = new ArrayList<>();
-            lastActivityResultList.forEach( lastActivityResult -> {
-                if (lastActivityResult instanceof Object[]){
-                    final Object[] lastActivityResultValues = (Object[]) lastActivityResult;
-                    final String lastActivityValue = lastActivityResultValues[1].toString();
-                    val.add(lastActivityValue);
-                }
-            });
-            final Value lastActivityValue = new Value();
-            lastActivityValue.setValues(val.toArray(new String[values.size()]));
-            row.getValues().add(lastActivityValue);
+            final Value accountValue = new Value();
+            accountValue.setValues(values.toArray(new String[values.size()]));
+            row.getValues().add(accountValue);
 
             rows.add(row);
         });
@@ -249,13 +196,14 @@ public class DepositListReportSpecification implements ReportSpecification {
         return rows;
     }
 
-    private String buildAccountQuery(final ReportRequest reportRequest, int pageIndex, int size) {
+    private String buildCustomerQuery(final ReportRequest reportRequest, int pageIndex, int size) {
         final StringBuilder query = new StringBuilder("SELECT ");
 
-        final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
+        final List<DisplayableField> displayableFields;
+        displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.accountColumnMapping.get(displayableField.getName());
+            final String column = this.customerColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
@@ -263,17 +211,15 @@ public class DepositListReportSpecification implements ReportSpecification {
 
         query.append(columns.stream().collect(Collectors.joining(", ")))
                 .append(" FROM ")
-                .append("shed_product_instances pi");
+                .append("maat_customers cst ");
+
         final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
         if (!queryParameters.isEmpty()) {
             final ArrayList<String> criteria = new ArrayList<>();
             queryParameters.forEach(queryParameter -> {
-                if (queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
+                if(queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
                     criteria.add(
-                            CriteriaBuilder.buildCriteria(this.accountColumnMapping.get(queryParameter.getName()), queryParameter)
-                    );
-                    criteria.add(
-                            CriteriaBuilder.buildCriteria(this.employeeColumnMapping.get(queryParameter.getName()), queryParameter)
+                            CriteriaBuilder.buildCriteria(this.customerColumnMapping.get(queryParameter.getName()), queryParameter)
                     );
                 }
             });
@@ -284,7 +230,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             }
 
         }
-        query.append(" ORDER BY pi.customer_identifier");
+        query.append(" ORDER BY cst.identifier");
 
         query.append(" LIMIT ");
         query.append(size);
@@ -294,71 +240,35 @@ public class DepositListReportSpecification implements ReportSpecification {
         }
 
         return query.toString();
-
-        // return "SELECT ... FROM shed_product_instances pi";
-
     }
 
-    private String buildCustomerQuery(final ReportRequest reportRequest, final String customerIdentifier) {
-            final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
-            final ArrayList<String> columns = new ArrayList<>();
-            displayableFields.forEach(displayableField -> {
-                final String column = this.customerColumnMapping.get(displayableField.getName());
-                if (column != null) {
-                    columns.add(column);
-                }
-            });
-        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                "FROM maat_customers cst " +
-                "LEFT JOIN shed_product_instances pi on cst.identifier = pi.customer_identifier " +
-                "WHERE pi.customer_identifier ='" + customerIdentifier + "' " +
-                "ORDER BY cst.identifier";
-    }
-
-    private String buildOfficeQuery(final ReportRequest reportRequest, final String customerIdentifier) {
+    private String buildDepositAccountQuery(final ReportRequest reportRequest, final String customerIdentifier) {
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.officeColumnMapping.get(displayableField.getName());
+            final String column = this.depositAccountColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
         });
 
         return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                "FROM maat_customers cst " +
+                "FROM shed_product_instances pi " +
+                "LEFT JOIN maat_customers cst on pi.customer_identifier = cst.identifier " +
                 "WHERE cst.identifier ='" + customerIdentifier + "' " +
-                "ORDER BY cst.identifier";
-    }
-
-    private String buildLastAccountActivity(final ReportRequest reportRequest, final String accountIdentifier){
-        final List<DisplayableField> displayableFields = new ArrayList<>();
-        final ArrayList<String> columns = new ArrayList<>();
-        displayableFields.forEach(displayableField -> {
-            final String column = this.accountColumnMapping.get(displayableField.getName());
-            if(column != null){
-                columns.add(column);
-            }
-        });
-
-        return "SELECT " + columns.stream().collect(Collectors.joining(",")) + ""  +
-                "FROM thoth_account_entries acc_entry" +
-                "WHERE acc_entry.account_id ='" + accountIdentifier + "'" +
-                "ORDER BY acc_entry.transaction_date";
+                "ORDER BY pi.account_identifier";
     }
 
     private List<DisplayableField> buildDisplayableFields() {
 
         return Arrays.asList(
                 DisplayableFieldBuilder.create(CUSTOMER, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(ACCOUNT_TYPE,Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(ACCOUNT_NUMBER, Type.TEXT).mandatory().build(),
-
-                DisplayableFieldBuilder.create(STATE,Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LAST_ACCOUNT_ACTIVITY, Type.DATE).build(),
-
+                DisplayableFieldBuilder.create(STATE,Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(DATE_RANGE, Type.DATE).build()
