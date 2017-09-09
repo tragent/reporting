@@ -120,14 +120,14 @@ public class LoanListReportSpecification implements ReportSpecification {
         this.customerColumnMapping.put(LAST_NAME, "cst.surname");
         this.customerColumnMapping.put(OFFICE, "cst.assigned_office");
 
-        this.loanColumnMapping.put(DATE_RANGE, "cases.created_on");
-        this.loanColumnMapping.put(LOAN_STATE, "cases.current_state");
-        this.loanColumnMapping.put(LOAN_TYPE, "cases.product_identifier");
-        this.loanColumnMapping.put(EMPLOYEE, "cases.created_by");
+        //this.loanColumnMapping.put(DATE_RANGE, "cases.created_on");
+        //this.loanColumnMapping.put(LOAN_STATE, "cases.current_state");
+        //this.loanColumnMapping.put(LOAN_TYPE, "cases.product_identifier");
+        //this.loanColumnMapping.put(EMPLOYEE, "cases.created_by");
         this.loanColumnMapping.put(LOAN_TERM,
-                "il_cases.term_range_temporal_unit, " +
-                "il_cases.term_range_minimum, " +
-                "il_cases.term_range_maximum, " +
+                "il_cases.term_range_temporal_unit" +
+                "il_cases.term_range_minimum" +
+                "il_cases.term_range_maximum" +
                 "il_cases.balance_range_maximum");
 
         this.loanColumnMapping.put(LOAN_ACCOUNT_NUMBER, "il_cases.case_id");
@@ -209,19 +209,19 @@ public class LoanListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_TYPE, Type.TEXT).build(),
+                //DisplayableFieldBuilder.create(LOAN_TYPE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LOAN_ACCOUNT_NUMBER, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_STATE, Type.TEXT).build(),
+               // DisplayableFieldBuilder.create(LOAN_STATE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
+               // DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build()
         );
     }
 
     private List<QueryParameter> buildQueryParameters() {
         return Arrays.asList(
-                QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build(),
-                QueryParameterBuilder.create(LOAN_STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
+                QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build()
+                //QueryParameterBuilder.create(LOAN_STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
         );
     }
 
