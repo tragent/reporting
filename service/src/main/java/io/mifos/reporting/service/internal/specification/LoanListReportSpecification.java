@@ -125,9 +125,9 @@ public class LoanListReportSpecification implements ReportSpecification {
         //this.loanColumnMapping.put(LOAN_TYPE, "cases.product_identifier");
         //this.loanColumnMapping.put(EMPLOYEE, "cases.created_by");
         this.loanColumnMapping.put(LOAN_TERM,
-                "il_cases.term_range_temporal_unit" +
-                "il_cases.term_range_minimum" +
-                "il_cases.term_range_maximum" +
+                "il_cases.term_range_temporal_unit, " +
+                "il_cases.term_range_minimum, " +
+                "il_cases.term_range_maximum, " +
                 "il_cases.balance_range_maximum");
 
         this.loanColumnMapping.put(LOAN_ACCOUNT_NUMBER, "il_cases.case_id");
@@ -211,7 +211,7 @@ public class LoanListReportSpecification implements ReportSpecification {
                 //DisplayableFieldBuilder.create(LOAN_TYPE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LOAN_ACCOUNT_NUMBER, Type.TEXT).build(),
                // DisplayableFieldBuilder.create(LOAN_STATE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory().build(),
                // DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build()
         );

@@ -180,7 +180,7 @@ public class DepositListReportSpecification implements ReportSpecification {
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues = (Object[]) accountResult;
                     final String accountValue = accountResultValues[0].toString() + " (" +
-                            Double.valueOf(accountResultValues[1].toString()) + ")";
+                            accountResultValues[1].toString() + ")";
                     values.add(accountValue);
                     this.logger.info("Account Values: {0} ", accountResultValues);
                 }
