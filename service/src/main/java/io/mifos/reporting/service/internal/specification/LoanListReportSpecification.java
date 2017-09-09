@@ -180,7 +180,6 @@ public class LoanListReportSpecification implements ReportSpecification {
                 row.getValues().add(value);
             }
 
-            final DecimalFormat decimalFormat = new DecimalFormat("0.00");
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildLoanAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
             final ArrayList<String> values = new ArrayList<>();
@@ -189,7 +188,7 @@ public class LoanListReportSpecification implements ReportSpecification {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
                     final String accountValue = accountResultValues[0].toString() + " (" +
-                            decimalFormat.format(Double.valueOf(accountResultValues[1].toString())) + ")";
+                            Double.valueOf(accountResultValues[1].toString()) + ")";
                     values.add(accountValue);
                 }
             });
@@ -220,7 +219,7 @@ public class LoanListReportSpecification implements ReportSpecification {
 
     private List<QueryParameter> buildQueryParameters() {
         return Arrays.asList(
-                QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build()
+                //QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build()
                 //QueryParameterBuilder.create(LOAN_STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
         );
     }

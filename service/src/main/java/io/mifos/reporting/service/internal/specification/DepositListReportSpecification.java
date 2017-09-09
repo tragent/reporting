@@ -173,7 +173,6 @@ public class DepositListReportSpecification implements ReportSpecification {
 
             this.logger.info("Customer ID: {0}", customerIdentifier);
 
-            final DecimalFormat decimalFormat = new DecimalFormat("0.00");
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
             final ArrayList<String> values = new ArrayList<>();
@@ -181,7 +180,7 @@ public class DepositListReportSpecification implements ReportSpecification {
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues = (Object[]) accountResult;
                     final String accountValue = accountResultValues[0].toString() + " (" +
-                            decimalFormat.format(Double.valueOf(accountResultValues[1].toString())) + ")";
+                            Double.valueOf(accountResultValues[1].toString()) + ")";
                     values.add(accountValue);
                     this.logger.info("Account Values: {0} ", accountResultValues);
                 }
