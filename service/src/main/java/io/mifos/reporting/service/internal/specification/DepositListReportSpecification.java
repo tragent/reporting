@@ -1,3 +1,18 @@
+/*
+ * Copyright 2017 The Mifos Initiative.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.mifos.reporting.service.internal.specification;
 
 import io.mifos.core.api.util.UserContextHolder;
@@ -11,7 +26,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import java.text.DecimalFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,7 +43,8 @@ public class DepositListReportSpecification implements ReportSpecification {
     private static final String LAST_NAME = "Last Name";
     private static final String EMPLOYEE = "Created By";
     private static final String ACCOUNT_NUMBER = "Deposit Account";
-    private static final String ACCOUNT_TYPE = "Account Type";
+    private static final String PRODUCT = "Product";
+    private static final String ACCOUNT_TYPE = "Deposit Type";
     private static final String STATE = "Status";
     private static final String OFFICE = "Office";
     private static final String DATE_RANGE = "Date Created";
@@ -40,6 +55,7 @@ public class DepositListReportSpecification implements ReportSpecification {
 
     private final HashMap<String, String> customerColumnMapping = new HashMap<>();
     private final HashMap<String, String> depositAccountColumnMapping = new HashMap<>();
+    private final HashMap<String, String> depositProductColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
 
@@ -121,10 +137,13 @@ public class DepositListReportSpecification implements ReportSpecification {
         this.depositAccountColumnMapping.put(EMPLOYEE, "pi.created_by");
         this.depositAccountColumnMapping.put(ACCOUNT_NUMBER, "pi.account_identifier");
         this.depositAccountColumnMapping.put(STATE, "pi.a_state");
-        this.depositAccountColumnMapping.put(ACCOUNT_TYPE, "pi.product_definition_id");
+        this.depositAccountColumnMapping.put(PRODUCT, "pi.product_definition_id");
         this.depositAccountColumnMapping.put(DATE_RANGE, "pi.created_on");
 
+        this.depositProductColumnMapping.put(ACCOUNT_TYPE, "pd.a_name, pd.a_type");
+
         this.allColumnMapping.putAll(customerColumnMapping);
+        this.allColumnMapping.putAll(depositProductColumnMapping);
         this.allColumnMapping.putAll(depositAccountColumnMapping);
     }
     private Header createHeader(final List<DisplayableField> displayableFields) {
@@ -142,7 +161,6 @@ public class DepositListReportSpecification implements ReportSpecification {
         final ArrayList<Row> rows = new ArrayList<>();
 
         customerResultList.forEach(result -> {
-            this.logger.info("Result Row: {0} ", result);
             final Row row = new Row();
             row.setValues(new ArrayList<>());
 
@@ -171,18 +189,48 @@ public class DepositListReportSpecification implements ReportSpecification {
                 row.getValues().add(value);
             }
 
-            this.logger.info("Customer ID: {0}", customerIdentifier);
-
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
+
             final ArrayList<String> values = new ArrayList<>();
             accountResultList.forEach(accountResult -> {
+
+                final String productIdentifier;
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues = (Object[]) accountResult;
-                    final String accountValue = accountResultValues[0].toString() + " (" +
-                            accountResultValues[1].toString() + ")";
+
+                    productIdentifier = accountResultValues[0].toString();
+
+                    final Query depositProductQuery = this.entityManager.createNativeQuery(this.buildDepositProductQuery(reportRequest, productIdentifier));
+                    final List<?> depositProductResultList = depositProductQuery.getResultList();
+
+                    if (depositProductResultList.get(0).toString() != null){
+                        final String product = depositProductResultList.get(0).toString();
+                        values.add(product);
+                    }
+
+                    if (depositProductResultList.get(1).toString() != null){
+                        final String acountType = depositProductResultList.get(1).toString();
+                        values.add(acountType);
+                    }
+
+                    final String accountValue = " (" + accountResultValues[1].toString() + ")";
+
                     values.add(accountValue);
-                    this.logger.info("Account Values: {0} ", accountResultValues);
+
+                    if (accountResultValues[2].toString() != null){
+                        final String state = accountResultValues[2].toString();
+                        values.add(state);
+                    }
+                    if (accountResultValues[4].toString() != null){
+                        final String createdBy = accountResultValues[4].toString();
+                        values.add(createdBy);
+                    }
+
+                    if (accountResultValues[5].toString() != null){
+                        final String createdOn = accountResultValues[5].toString();
+                        values.add(createdOn);
+                    }
                 }
             });
             final Value accountValue = new Value();
@@ -258,6 +306,22 @@ public class DepositListReportSpecification implements ReportSpecification {
                 "ORDER BY pi.account_identifier";
     }
 
+    private String buildDepositProductQuery(final ReportRequest reportRequest, final String productIdentifier){
+        final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
+        final ArrayList<String> columns = new ArrayList<>();
+        displayableFields.forEach(displayableField -> {
+            final String column = this.depositProductColumnMapping.get(displayableField.getName());
+            if (column != null) {
+                columns.add(column);
+            }
+        });
+
+        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
+                "FROM shed_product_definitions pd " +
+                "LEFT JOIN shed_product_instances pi on pd.id = pi.product_definition_id " +
+                "WHERE pi.product_definition_id ='" + productIdentifier + "' ";
+    }
+
     private List<DisplayableField> buildDisplayableFields() {
 
         return Arrays.asList(
@@ -265,11 +329,13 @@ public class DepositListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(ACCOUNT_TYPE,Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build(),
+
+                DisplayableFieldBuilder.create(PRODUCT, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(ACCOUNT_TYPE, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(ACCOUNT_NUMBER, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(STATE,Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(DATE_RANGE, Type.DATE).build()
         );
 
