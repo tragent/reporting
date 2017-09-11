@@ -214,6 +214,7 @@ public class DepositListReportSpecification implements ReportSpecification {
                         values.add(acountType);
                     }
 
+                    int count = accountResultValues.length;
                     final String accountValue = " (" + accountResultValues[1].toString() + ")";
 
                     values.add(accountValue);
@@ -222,13 +223,13 @@ public class DepositListReportSpecification implements ReportSpecification {
                         final String state = accountResultValues[2].toString();
                         values.add(state);
                     }
-                    if (accountResultValues[4].toString() != null){
-                        final String createdBy = accountResultValues[4].toString();
+                    if (accountResultValues[3].toString() != null){
+                        final String createdBy = accountResultValues[3].toString();
                         values.add(createdBy);
                     }
 
-                    if (accountResultValues[5].toString() != null){
-                        final String createdOn = accountResultValues[5].toString();
+                    if (accountResultValues[4].toString() != null){
+                        final String createdOn = accountResultValues[4].toString();
                         values.add(createdOn);
                     }
                 }

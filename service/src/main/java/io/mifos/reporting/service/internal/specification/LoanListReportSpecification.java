@@ -203,7 +203,7 @@ public class LoanListReportSpecification implements ReportSpecification {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
                     final String accountValue = accountResultValues[0].toString() + " (" +
-                            Double.valueOf(accountResultValues[1].toString()) + ")";
+                            accountResultValues[1].toString() + ")";
                     values.add(accountValue);
                 }
             });
@@ -224,7 +224,7 @@ public class LoanListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).build(),
                 //DisplayableFieldBuilder.create(LOAN_TYPE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_ACCOUNT_NUMBER, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(LOAN_ACCOUNT_NUMBER, Type.TEXT).mandatory().build(),
                // DisplayableFieldBuilder.create(LOAN_STATE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory() .build(),
                // DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
