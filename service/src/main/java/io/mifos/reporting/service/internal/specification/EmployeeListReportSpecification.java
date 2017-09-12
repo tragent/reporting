@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @Report(category = "Organization", identifier = "Employee")
 public class EmployeeListReportSpecification implements ReportSpecification {
 
-    private static final String DATE_RANGE = "Date Range";
     private static final String USERNAME = "Username";
     private static final String FIRST_NAME = "First Name";
     private static final String MIDDLE_NAME = "Middle Name";
@@ -108,7 +107,6 @@ public class EmployeeListReportSpecification implements ReportSpecification {
     }
 
     private void initializeMapping() {
-        //this.employeeColumnMapping.put(DATE_RANGE, "he.created_on");
         this.employeeColumnMapping.put(USERNAME, "he.identifier");
         this.employeeColumnMapping.put(FIRST_NAME, "he.given_name");
         this.employeeColumnMapping.put(MIDDLE_NAME, "he.middle_name");
@@ -146,7 +144,11 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             if (result instanceof Object[]) {
                 final Object[] resultValues = (Object[]) result;
 
-                officeIdentifier = resultValues[0].toString();
+                if (resultValues[0] == null){
+                    officeIdentifier = " ";
+                } else {
+                    officeIdentifier = resultValues[0].toString();
+                }
 
                 for (final Object resultValue : resultValues) {
                     final Value value = new Value();
@@ -160,7 +162,6 @@ public class EmployeeListReportSpecification implements ReportSpecification {
                 }
             }else {
                 officeIdentifier = result.toString();
-
                 final Value value = new Value();
                 value.setValues(new String[]{result.toString()});
                 row.getValues().add(value);
@@ -255,7 +256,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             }
         });
 
-        return "SELECT " + columns.stream().collect(Collectors.joining()) + " " +
+        return "SELECT " + columns.get(0) + " " +
                 "FROM horus_offices ho " +
                 "LEFT JOIN horus_employees he on ho.id = he.assigned_office_id " +
                 "WHERE he.assigned_office_id ='" + officeIdentifier + "' ";

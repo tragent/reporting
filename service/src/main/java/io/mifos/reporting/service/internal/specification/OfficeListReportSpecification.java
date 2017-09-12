@@ -257,8 +257,8 @@ public class OfficeListReportSpecification implements ReportSpecification {
 
         if (!columns.isEmpty()) {
             return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                    "FROM horus_addresses adr " +
-                    "LEFT JOIN horus_offices ho on adr.office_id = ho.id " +
+                    "FROM horus_addresses ha " +
+                    "LEFT JOIN horus_offices ho on ha.office_id = ho.id " +
                     "WHERE ho.id ='" + officeIdentifier + "' ";
         }
         return null;
