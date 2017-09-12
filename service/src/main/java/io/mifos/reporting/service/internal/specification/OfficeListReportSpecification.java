@@ -18,31 +18,28 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+@Report(category = "Organization", identifier = "Office")
+public class OfficeListReportSpecification implements ReportSpecification {
 
-@Report(category = "Organization", identifier = "Employee")
-public class EmployeeListReportSpecification implements ReportSpecification {
-
-    private static final String DATE_RANGE = "Date Range";
-    private static final String USERNAME = "Username";
-    private static final String FIRST_NAME = "First Name";
-    private static final String MIDDLE_NAME = "Middle Name";
-    private static final String LAST_NAME = "Last Name";
+    private static final String OFFICE = "Identifier";
+    private static final String OFFICE_NAME = "Office";
+    private static final String DESCRIPTION = "Description";
     private static final String CREATED_BY = "Created By";
-
-    private static final String OFFICE = "Office Id";
-    private static final String OFFICE_NAME = "Office Name";
+    private static final String STREET = "Street";
+    private static final String CITY = "City";
+    private static final String REGION = "Region";
+    private static final String POSTAL_CODE = "Postal Code";
+    private static final String COUNTRY = "Country";
 
     private final Logger logger;
 
     private final EntityManager entityManager;
-
-    private final HashMap<String, String> employeeColumnMapping = new HashMap<>();
     private final HashMap<String, String> officeColumnMapping = new HashMap<>();
+    private final HashMap<String, String> addressColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
-
     @Autowired
-    public EmployeeListReportSpecification(@Qualifier(ServiceConstants.LOGGER_NAME) final Logger logger,
+    public OfficeListReportSpecification(@Qualifier(ServiceConstants.LOGGER_NAME) final Logger logger,
                                            final EntityManager entityManager) {
         super();
         this.logger = logger;
@@ -53,9 +50,9 @@ public class EmployeeListReportSpecification implements ReportSpecification {
     @Override
     public ReportDefinition getReportDefinition() {
         final ReportDefinition reportDefinition = new ReportDefinition();
-        reportDefinition.setIdentifier("Employee");
-        reportDefinition.setName("Employee Listing");
-        reportDefinition.setDescription("List of all employees.");
+        reportDefinition.setIdentifier("Office");
+        reportDefinition.setName("Office Listing");
+        reportDefinition.setDescription("List of all Offices.");
         reportDefinition.setQueryParameters(this.buildQueryParameters());
         reportDefinition.setDisplayableFields(this.buildDisplayableFields());
         return reportDefinition;
@@ -71,12 +68,12 @@ public class EmployeeListReportSpecification implements ReportSpecification {
         reportPage.setDescription(reportDefinition.getDescription());
         reportPage.setHeader(this.createHeader(reportRequest.getDisplayableFields()));
 
-        final Query customerQuery = this.entityManager.createNativeQuery(this.buildEmployeeQuery(reportRequest, pageIndex, size));
+        final Query customerQuery = this.entityManager.createNativeQuery(this.buildOfficeQuery(reportRequest, pageIndex, size));
         final List<?> customerResultList =  customerQuery.getResultList();
         reportPage.setRows(this.buildRows(reportRequest, customerResultList));
 
         reportPage.setHasMore(
-                !this.entityManager.createNativeQuery(this.buildEmployeeQuery(reportRequest, pageIndex + 1, size))
+                !this.entityManager.createNativeQuery(this.buildOfficeQuery(reportRequest, pageIndex + 1, size))
                         .getResultList().isEmpty()
         );
 
@@ -108,18 +105,19 @@ public class EmployeeListReportSpecification implements ReportSpecification {
     }
 
     private void initializeMapping() {
-        //this.employeeColumnMapping.put(DATE_RANGE, "he.created_on");
-        this.employeeColumnMapping.put(USERNAME, "he.identifier");
-        this.employeeColumnMapping.put(FIRST_NAME, "he.given_name");
-        this.employeeColumnMapping.put(MIDDLE_NAME, "he.middle_name");
-        this.employeeColumnMapping.put(LAST_NAME, "he.surname");
-        this.employeeColumnMapping.put(CREATED_BY, "he.created_by");
-        this.employeeColumnMapping.put(OFFICE, "he.assigned_office_id");
-
+        this.officeColumnMapping.put(OFFICE, "ho.id");
         this.officeColumnMapping.put(OFFICE_NAME, "ho.a_name");
+        this.officeColumnMapping.put(DESCRIPTION, "ho.description");
+        this.officeColumnMapping.put(CREATED_BY, "ho.created_by");
 
-        this.allColumnMapping.putAll(employeeColumnMapping);
+        this.addressColumnMapping.put(STREET, "ha.street");
+        this.addressColumnMapping.put(CITY, "ha.city");
+        this.addressColumnMapping.put(REGION, "ha.region");
+        this.addressColumnMapping.put(POSTAL_CODE, "ha.postal_code");
+        this.addressColumnMapping.put(COUNTRY, "ha.country");
+
         this.allColumnMapping.putAll(officeColumnMapping);
+        this.allColumnMapping.putAll(addressColumnMapping);
     }
 
     private Header createHeader(final List<DisplayableField> displayableFields) {
@@ -133,11 +131,31 @@ public class EmployeeListReportSpecification implements ReportSpecification {
         return header;
     }
 
+    private List<QueryParameter> buildQueryParameters() {
+        return Arrays.asList(
+                //QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build(),
+                //QueryParameterBuilder.create(STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
+        );
+    }
 
-    private List<Row> buildRows(final ReportRequest reportRequest, final List<?> employeeResultList) {
+    private List<DisplayableField> buildDisplayableFields() {
+        return Arrays.asList(
+                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(OFFICE_NAME, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(DESCRIPTION, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(CREATED_BY, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(STREET, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(CITY, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(REGION, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(POSTAL_CODE, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(COUNTRY, Type.TEXT).mandatory().build()
+        );
+    }
+
+    private List<Row> buildRows(final ReportRequest reportRequest, final List<?> officeResultList) {
         final ArrayList<Row> rows = new ArrayList<>();
 
-        employeeResultList.forEach(result -> {
+        officeResultList.forEach(result -> {
             final Row row = new Row();
             row.setValues(new ArrayList<>());
 
@@ -158,7 +176,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
 
                     row.getValues().add(value);
                 }
-            }else {
+            } else {
                 officeIdentifier = result.toString();
 
                 final Value value = new Value();
@@ -166,13 +184,13 @@ public class EmployeeListReportSpecification implements ReportSpecification {
                 row.getValues().add(value);
             }
 
-            final String officeQueryString = this.buildOfficeQuery(reportRequest, officeIdentifier);
-            if (officeQueryString != null) {
-                final Query officeQuery = this.entityManager.createNativeQuery(officeQueryString);
-                final List<?> resultList = officeQuery.getResultList();
-                final Value officeValue = new Value();
-                officeValue.setValues(new String[]{resultList.toString()});
-                row.getValues().add(officeValue);
+            final String addressQueryString = this.buildAddressQuery(reportRequest, officeIdentifier);
+            if (addressQueryString != null) {
+                final Query addressQuery = this.entityManager.createNativeQuery(addressQueryString);
+                final List<?> resultList = addressQuery.getResultList();
+                final Value addressValue = new Value();
+                addressValue.setValues(new String[]{resultList.toString()});
+                row.getValues().add(addressValue);
             }
 
             rows.add(row);
@@ -181,32 +199,13 @@ public class EmployeeListReportSpecification implements ReportSpecification {
         return rows;
     }
 
-    private List<QueryParameter> buildQueryParameters() {
-        return Arrays.asList(
-                //QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build(),
-                //QueryParameterBuilder.create(STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
-        );
-    }
-
-    private List<DisplayableField> buildDisplayableFields() {
-        return Arrays.asList(
-                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(USERNAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(CREATED_BY, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(OFFICE_NAME, Type.TEXT).mandatory().build()
-        );
-    }
-
-    private String buildEmployeeQuery(final ReportRequest reportRequest, int pageIndex, int size) {
+    private String buildOfficeQuery(final ReportRequest reportRequest, int pageIndex, int size) {
         final StringBuilder query = new StringBuilder("SELECT ");
 
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.employeeColumnMapping.get(displayableField.getName());
+            final String column = this.officeColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
@@ -214,7 +213,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
 
         query.append(columns.stream().collect(Collectors.joining(", ")))
                 .append(" FROM ")
-                .append("horus_employees he ");
+                .append("horus_offices ho ");
 
         final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
         if (!queryParameters.isEmpty()) {
@@ -222,7 +221,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             queryParameters.forEach(queryParameter -> {
                 if(queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
                     criteria.add(
-                            CriteriaBuilder.buildCriteria(this.employeeColumnMapping.get(queryParameter.getName()), queryParameter)
+                            CriteriaBuilder.buildCriteria(this.officeColumnMapping.get(queryParameter.getName()), queryParameter)
                     );
                 }
             });
@@ -233,7 +232,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             }
 
         }
-        query.append(" ORDER BY he.identifier");
+        query.append(" ORDER BY ho.a_name");
 
         query.append(" LIMIT ");
         query.append(size);
@@ -245,19 +244,25 @@ public class EmployeeListReportSpecification implements ReportSpecification {
         return query.toString();
     }
 
-    private String buildOfficeQuery(final ReportRequest reportRequest, final String officeIdentifier) {
+    private String buildAddressQuery(final ReportRequest reportRequest, final String officeIdentifier) {
+
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.officeColumnMapping.get(displayableField.getName());
+            final String column = this.addressColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
         });
 
-        return "SELECT " + columns.stream().collect(Collectors.joining()) + " " +
-                "FROM horus_offices ho " +
-                "LEFT JOIN horus_employees he on ho.id = he.assigned_office_id " +
-                "WHERE he.assigned_office_id ='" + officeIdentifier + "' ";
+        if (!columns.isEmpty()) {
+            return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
+                    "FROM horus_addresses adr " +
+                    "LEFT JOIN horus_offices ho on adr.office_id = ho.id " +
+                    "WHERE ho.id ='" + officeIdentifier + "' ";
+        }
+        return null;
     }
 }
+
+
