@@ -53,7 +53,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
     @Override
     public ReportDefinition getReportDefinition() {
         final ReportDefinition reportDefinition = new ReportDefinition();
-        reportDefinition.setIdentifier("Listing");
+        reportDefinition.setIdentifier("Employee");
         reportDefinition.setName("Employee Listing");
         reportDefinition.setDescription("List of all employees.");
         reportDefinition.setQueryParameters(this.buildQueryParameters());
