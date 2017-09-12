@@ -202,9 +202,8 @@ public class LoanListReportSpecification implements ReportSpecification {
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
-                    final String accountValue = accountResultValues[0].toString() + " (" +
-                            accountResultValues[1].toString() + ")";
-                    values.add(accountValue);
+                    //final String accountValue = accountResultValues[0].toString() + " (" + accountResultValues[1].toString() + ")";
+                    values.add(accountResultValues.toString());
                 }
             });
             final Value accountValue = new Value();

@@ -204,33 +204,30 @@ public class DepositListReportSpecification implements ReportSpecification {
                     final Query depositProductQuery = this.entityManager.createNativeQuery(this.buildDepositProductQuery(reportRequest, productIdentifier));
                     final List<?> depositProductResultList = depositProductQuery.getResultList();
 
-                    if (depositProductResultList.get(0).toString() != null){
-                        final String product = depositProductResultList.get(0).toString();
-                        values.add(product);
-                    }
+                    depositProductResultList.forEach(product ->{
+                        if (product instanceof Object[]) {
+                            final Object[] resultValues = (Object[]) product;
 
-                    if (depositProductResultList.get(1).toString() != null){
-                        final String acountType = depositProductResultList.get(1).toString();
-                        values.add(acountType);
-                    }
+                            for (final Object resultValue : resultValues) {
+                                final Value value = new Value();
+                                if (resultValue != null) {
+                                    value.setValues(new String[]{resultValue.toString()});
+                                } else {
+                                    value.setValues(new String[]{});
+                                }
 
-                    int count = accountResultValues.length;
-                    final String accountValue = " (" + accountResultValues[1].toString() + ")";
+                                row.getValues().add(value);
+                            }
+                        } else {
+                            final Value value = new Value();
+                            value.setValues(new String[]{product.toString()});
+                            row.getValues().add(value);
+                        }
+                    });
 
-                    values.add(accountValue);
+                    for (int i = 1; i < accountResultValues.length ; i++) {
+                        values.add(accountResultValues[i].toString());
 
-                    if (accountResultValues[2].toString() != null){
-                        final String state = accountResultValues[2].toString();
-                        values.add(state);
-                    }
-                    if (accountResultValues[3].toString() != null){
-                        final String createdBy = accountResultValues[3].toString();
-                        values.add(createdBy);
-                    }
-
-                    if (accountResultValues[4].toString() != null){
-                        final String createdOn = accountResultValues[4].toString();
-                        values.add(createdOn);
                     }
                 }
             });
