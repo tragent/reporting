@@ -197,18 +197,28 @@ public class LoanListReportSpecification implements ReportSpecification {
 
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildLoanAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
-            final ArrayList<String> values = new ArrayList<>();
+           // final ArrayList<String> values = new ArrayList<>();
             accountResultList.forEach(accountResult -> {
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
                     //final String accountValue = accountResultValues[0].toString() + " (" + accountResultValues[1].toString() + ")";
-                    values.add(accountResultValues.toString());
+                   // values.add(accountResultValues.toString());
+                    for (final Object loan: accountResultValues) {
+                        final Value value = new Value();
+                        if (loan != null) {
+                            value.setValues(new String[]{loan.toString()});
+                        } else {
+                            value.setValues(new String[]{});
+                        }
+
+                        row.getValues().add(value);
+                    }
                 }
             });
-            final Value accountValue = new Value();
-            accountValue.setValues(values.toArray(new String[values.size()]));
-            row.getValues().add(accountValue);
+            //final Value accountValue = new Value();
+            //accountValue.setValues(values.toArray(new String[values.size()]));
+            //row.getValues().add(accountValue);
 
             rows.add(row);
         });

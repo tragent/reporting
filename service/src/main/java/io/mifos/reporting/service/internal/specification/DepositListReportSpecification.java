@@ -192,7 +192,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
 
-            final ArrayList<String> values = new ArrayList<>();
+            //final ArrayList<String> values = new ArrayList<>();
             accountResultList.forEach(accountResult -> {
 
                 final String productIdentifier;
@@ -204,36 +204,32 @@ public class DepositListReportSpecification implements ReportSpecification {
                     final Query depositProductQuery = this.entityManager.createNativeQuery(this.buildDepositProductQuery(reportRequest, productIdentifier));
                     final List<?> depositProductResultList = depositProductQuery.getResultList();
 
-                    depositProductResultList.forEach(product ->{
-                        if (product instanceof Object[]) {
-                            final Object[] resultValues = (Object[]) product;
+                    depositProductResultList.forEach(product -> {
+                        final Object[] productResultValues = (Object[]) product;
 
-                            for (final Object resultValue : resultValues) {
-                                final Value value = new Value();
-                                if (resultValue != null) {
-                                    value.setValues(new String[]{resultValue.toString()});
-                                } else {
-                                    value.setValues(new String[]{});
-                                }
-
-                                row.getValues().add(value);
-                            }
-                        } else {
+                        for (final Object prod : productResultValues) {
                             final Value value = new Value();
-                            value.setValues(new String[]{product.toString()});
+                            if (prod != null) {
+                                value.setValues(new String[]{prod.toString()});
+                            } else {
+                                value.setValues(new String[]{});
+                            }
                             row.getValues().add(value);
                         }
                     });
 
-                    for (int i = 1; i < accountResultValues.length ; i++) {
-                        values.add(accountResultValues[i].toString());
 
+                    for (int i = 1; i < accountResultValues.length ; i++) {
+                        //values.add(accountResultValues[i].toString());
+                        final Value value = new Value();
+                        value.setValues(new String[]{accountResultValues[i].toString()});
+                        row.getValues().add(value);
                     }
                 }
             });
-            final Value accountValue = new Value();
-            accountValue.setValues(values.toArray(new String[values.size()]));
-            row.getValues().add(accountValue);
+            //final Value accountValue = new Value();
+            //accountValue.setValues(values.toArray(new String[values.size()]));
+            //row.getValues().add(accountValue);
 
             rows.add(row);
         });
