@@ -192,7 +192,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
 
-            //final ArrayList<String> values = new ArrayList<>();
+            final ArrayList<String> values = new ArrayList<>();
             accountResultList.forEach(accountResult -> {
 
                 final String productIdentifier;
@@ -208,28 +208,30 @@ public class DepositListReportSpecification implements ReportSpecification {
                         final Object[] productResultValues = (Object[]) product;
 
                         for (final Object prod : productResultValues) {
-                            final Value value = new Value();
+                            //final Value value = new Value();
                             if (prod != null) {
-                                value.setValues(new String[]{prod.toString()});
+                                //value.setValues(new String[]{prod.toString()});
+                                values.add(prod.toString());
                             } else {
-                                value.setValues(new String[]{});
+                               // value.setValues(new String[]{});
+                                values.add(prod.toString());
                             }
-                            row.getValues().add(value);
+                           // row.getValues().add(value);
                         }
                     });
 
 
                     for (int i = 1; i < accountResultValues.length ; i++) {
-                        //values.add(accountResultValues[i].toString());
-                        final Value value = new Value();
-                        value.setValues(new String[]{accountResultValues[i].toString()});
-                        row.getValues().add(value);
+                        //final Value value = new Value();
+                        //value.setValues(new String[]{accountResultValues[i].toString()});
+                        values.add(accountResultValues[i].toString());
+                        //row.getValues().add(value);
                     }
                 }
             });
-            //final Value accountValue = new Value();
-            //accountValue.setValues(values.toArray(new String[values.size()]));
-            //row.getValues().add(accountValue);
+            final Value accountValue = new Value();
+            accountValue.setValues(values.toArray(new String[values.size()]));
+            row.getValues().add(accountValue);
 
             rows.add(row);
         });

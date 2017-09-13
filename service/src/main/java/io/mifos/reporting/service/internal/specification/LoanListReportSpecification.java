@@ -134,7 +134,7 @@ public class LoanListReportSpecification implements ReportSpecification {
 
         this.loanColumnMapping.put(LOAN_TERM,
                 "il_cases.term_range_maximum, " +
-                "il_cases.term_range_temporal_unit, ");
+                "il_cases.term_range_temporal_unit");
         this.loanColumnMapping.put(PRINCIPAL, "il_cases.balance_range_maximum");
 
         this.loanColumnMapping.put(CASE, "il_cases.case_id");

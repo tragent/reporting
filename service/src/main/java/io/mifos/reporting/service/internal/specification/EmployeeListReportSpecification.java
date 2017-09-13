@@ -144,11 +144,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             if (result instanceof Object[]) {
                 final Object[] resultValues = (Object[]) result;
 
-                if (resultValues[0] == null){
-                    officeIdentifier = " ";
-                } else {
-                    officeIdentifier = resultValues[0].toString();
-                }
+                officeIdentifier = resultValues[0].toString();
 
                 for (final Object resultValue : resultValues) {
                     final Value value = new Value();
@@ -255,10 +251,12 @@ public class EmployeeListReportSpecification implements ReportSpecification {
                 columns.add(column);
             }
         });
-
-        return "SELECT DISTINCT " + columns.get(0) + " " +
+        if (!columns.isEmpty()) {
+        return "SELECT DISTINCT " + columns.stream().collect(Collectors.joining(", ")) + " " +
                 "FROM horus_offices ho " +
                 "LEFT JOIN horus_employees he on ho.id = he.assigned_office_id " +
                 "WHERE he.assigned_office_id ='" + officeIdentifier + "' ";
+        }
+        return null;
     }
 }

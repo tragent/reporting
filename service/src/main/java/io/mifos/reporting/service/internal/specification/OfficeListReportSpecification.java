@@ -111,7 +111,9 @@ public class OfficeListReportSpecification implements ReportSpecification {
         this.officeColumnMapping.put(DESCRIPTION, "ho.description");
         this.officeColumnMapping.put(CREATED_BY, "ho.created_by");
 
-        this.addressColumnMapping.put(ADDRESS, "CONCAT(ha.street, ', ', ha.postal_code, ', ', ha.city, ', ', ha.region, ', ', ha.country)");
+        this.addressColumnMapping.put(ADDRESS, "CONCAT(IFNULL(ha.street, ', '), " +
+                "IFNULL(ha.postal_code, ', '), IFNULL(ha.city, ', ')," +
+                " IFNULL(ha.region, ', '), IFNULL(ha.country, ','))");
 
         this.allColumnMapping.putAll(officeColumnMapping);
         this.allColumnMapping.putAll(addressColumnMapping);
