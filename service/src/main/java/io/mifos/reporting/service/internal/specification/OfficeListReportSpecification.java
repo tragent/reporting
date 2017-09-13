@@ -25,11 +25,12 @@ public class OfficeListReportSpecification implements ReportSpecification {
     private static final String OFFICE_NAME = "Office";
     private static final String DESCRIPTION = "Description";
     private static final String CREATED_BY = "Created By";
-    private static final String STREET = "Street";
-    private static final String CITY = "City";
-    private static final String REGION = "Region";
-    private static final String POSTAL_CODE = "Postal Code";
-    private static final String COUNTRY = "Country";
+   // private static final String STREET = "Street";
+    //private static final String CITY = "City";
+   // private static final String REGION = "Region";
+   // private static final String POSTAL_CODE = "Postal Code";
+   // private static final String COUNTRY = "Country";
+    private static final String ADDRESS = "Address";
 
     private final Logger logger;
 
@@ -110,11 +111,7 @@ public class OfficeListReportSpecification implements ReportSpecification {
         this.officeColumnMapping.put(DESCRIPTION, "ho.description");
         this.officeColumnMapping.put(CREATED_BY, "ho.created_by");
 
-        this.addressColumnMapping.put(STREET, "ha.street");
-        this.addressColumnMapping.put(CITY, "ha.city");
-        this.addressColumnMapping.put(REGION, "ha.region");
-        this.addressColumnMapping.put(POSTAL_CODE, "ha.postal_code");
-        this.addressColumnMapping.put(COUNTRY, "ha.country");
+        this.addressColumnMapping.put(ADDRESS, "CONCAT(ha.street, ', ', ha.postal_code, ', ', ha.city, ', ', ha.region, ', ', ha.country)");
 
         this.allColumnMapping.putAll(officeColumnMapping);
         this.allColumnMapping.putAll(addressColumnMapping);
@@ -144,11 +141,7 @@ public class OfficeListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(OFFICE_NAME, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(DESCRIPTION, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(CREATED_BY, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(STREET, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(CITY, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(REGION, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(POSTAL_CODE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(COUNTRY, Type.TEXT).mandatory().build()
+                DisplayableFieldBuilder.create(ADDRESS, Type.TEXT).mandatory().build()
         );
     }
 

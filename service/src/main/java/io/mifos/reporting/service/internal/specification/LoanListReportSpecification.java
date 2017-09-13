@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import java.text.DecimalFormat;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,11 +44,11 @@ public class LoanListReportSpecification implements ReportSpecification {
     private static final String LAST_NAME = "Last name";
     private static final String EMPLOYEE = "Employee";
     private static final String LOAN_STATE = "State";
-    private static final String LOAN_ACCOUNT_NUMBER = "Account number";
+    private static final String CASE = "Case Id";
     private static final String LOAN_TYPE = "Account type";
     private static final String LOAN_TERM = "Loan term";
     private static final String OFFICE = "Office";
-
+    private static final String PRINCIPAL = "Principal";
 
     private final Logger logger;
 
@@ -57,8 +56,6 @@ public class LoanListReportSpecification implements ReportSpecification {
 
     private final HashMap<String, String> customerColumnMapping = new HashMap<>();
     private final HashMap<String, String> loanColumnMapping = new HashMap<>();
-    private final HashMap<String, String> officeColumnMapping = new HashMap<>();
-    private final HashMap<String, String> employeeColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
     @Autowired
@@ -135,17 +132,12 @@ public class LoanListReportSpecification implements ReportSpecification {
         this.customerColumnMapping.put(LAST_NAME, "cst.surname");
         this.customerColumnMapping.put(OFFICE, "cst.assigned_office");
 
-        //this.loanColumnMapping.put(DATE_RANGE, "cases.created_on");
-        //this.loanColumnMapping.put(LOAN_STATE, "cases.current_state");
-        //this.loanColumnMapping.put(LOAN_TYPE, "cases.product_identifier");
-        //this.loanColumnMapping.put(EMPLOYEE, "cases.created_by");
         this.loanColumnMapping.put(LOAN_TERM,
-                "il_cases.term_range_temporal_unit, " +
-                "il_cases.term_range_minimum, " +
                 "il_cases.term_range_maximum, " +
-                "il_cases.balance_range_maximum");
+                "il_cases.term_range_temporal_unit, ");
+        this.loanColumnMapping.put(PRINCIPAL, "il_cases.balance_range_maximum");
 
-        this.loanColumnMapping.put(LOAN_ACCOUNT_NUMBER, "il_cases.case_id");
+        this.loanColumnMapping.put(CASE, "il_cases.case_id");
 
         this.allColumnMapping.putAll(customerColumnMapping);
         this.allColumnMapping.putAll(loanColumnMapping);
@@ -197,13 +189,11 @@ public class LoanListReportSpecification implements ReportSpecification {
 
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildLoanAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
-           // final ArrayList<String> values = new ArrayList<>();
+
             accountResultList.forEach(accountResult -> {
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
-                    //final String accountValue = accountResultValues[0].toString() + " (" + accountResultValues[1].toString() + ")";
-                   // values.add(accountResultValues.toString());
                     for (final Object loan: accountResultValues) {
                         final Value value = new Value();
                         if (loan != null) {
@@ -216,9 +206,6 @@ public class LoanListReportSpecification implements ReportSpecification {
                     }
                 }
             });
-            //final Value accountValue = new Value();
-            //accountValue.setValues(values.toArray(new String[values.size()]));
-            //row.getValues().add(accountValue);
 
             rows.add(row);
         });
@@ -229,15 +216,13 @@ public class LoanListReportSpecification implements ReportSpecification {
     private List<DisplayableField> buildDisplayableFields() {
         return Arrays.asList(
                 DisplayableFieldBuilder.create(CUSTOMER, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(FIRST_NAME, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(MIDDLE_NAME, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).build(),
-                //DisplayableFieldBuilder.create(LOAN_TYPE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_ACCOUNT_NUMBER, Type.TEXT).mandatory().build(),
-               // DisplayableFieldBuilder.create(LOAN_STATE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory() .build(),
-               // DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build()
+                DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(CASE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(PRINCIPAL, Type.TEXT).mandatory().build()
         );
     }
 

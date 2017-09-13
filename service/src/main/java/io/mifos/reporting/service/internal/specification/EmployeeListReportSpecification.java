@@ -172,7 +172,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
                 final Query officeQuery = this.entityManager.createNativeQuery(officeQueryString);
                 final List<?> resultList = officeQuery.getResultList();
                 final Value officeValue = new Value();
-                officeValue.setValues(new String[]{resultList.toString()});
+                officeValue.setValues(new String[]{resultList.get(0).toString()});
                 row.getValues().add(officeValue);
             }
 
@@ -256,7 +256,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             }
         });
 
-        return "SELECT " + columns.get(0) + " " +
+        return "SELECT DISTINCT " + columns.get(0) + " " +
                 "FROM horus_offices ho " +
                 "LEFT JOIN horus_employees he on ho.id = he.assigned_office_id " +
                 "WHERE he.assigned_office_id ='" + officeIdentifier + "' ";
