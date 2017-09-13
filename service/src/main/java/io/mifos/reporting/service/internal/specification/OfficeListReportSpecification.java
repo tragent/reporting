@@ -189,7 +189,7 @@ public class OfficeListReportSpecification implements ReportSpecification {
                 final Query addressQuery = this.entityManager.createNativeQuery(addressQueryString);
                 final List<?> resultList = addressQuery.getResultList();
                 final Value addressValue = new Value();
-                addressValue.setValues(new String[]{resultList.toString()});
+                addressValue.setValues(new String[]{resultList.get(0).toString()});
                 row.getValues().add(addressValue);
             }
 
