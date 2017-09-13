@@ -310,7 +310,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             }
         });
 
-        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
+        return "SELECT DISTINCT " + columns.stream().collect(Collectors.joining(", ")) + " " +
                 "FROM shed_product_definitions pd " +
                 "LEFT JOIN shed_product_instances pi on pd.id = pi.product_definition_id " +
                 "WHERE pi.product_definition_id ='" + productIdentifier + "' ";
