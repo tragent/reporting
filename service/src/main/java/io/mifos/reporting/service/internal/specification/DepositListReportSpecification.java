@@ -208,15 +208,15 @@ public class DepositListReportSpecification implements ReportSpecification {
                         final Object[] productResultValues = (Object[]) product;
 
                         for (final Object prod : productResultValues) {
-                            //final Value value = new Value();
+                            final Value value = new Value();
                             if (prod != null) {
-                                //value.setValues(new String[]{prod.toString()});
-                                values.add(prod.toString());
+                                value.setValues(new String[]{prod.toString()});
+                                //values.add(prod.toString());
                             } else {
-                               // value.setValues(new String[]{});
-                                values.add(prod.toString());
+                                value.setValues(new String[]{});
+                                //values.add(prod.toString());
                             }
-                           // row.getValues().add(value);
+                            row.getValues().add(value);
                         }
                     });
 
