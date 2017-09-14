@@ -245,7 +245,7 @@ public class EmployeeListReportSpecification implements ReportSpecification {
             }
         });
         if (!columns.isEmpty()) {
-        return "SELECT DISTINCT " + columns.stream().collect(Collectors.joining(", ")) + " " +
+        return "SELECT DISTINCT " + columns.get(0).toString() + " " +
                 "FROM horus_offices ho " +
                 "LEFT JOIN horus_employees he on ho.id = he.assigned_office_id " +
                 "WHERE he.assigned_office_id ='" + officeIdentifier + "' ";
