@@ -37,18 +37,21 @@ import java.util.stream.Collectors;
 @Report(category = "Loan", identifier = "Listing")
 public class LoanListReportSpecification implements ReportSpecification {
 
-    private static final String DATE_RANGE = "Date created";
+
     private static final String CUSTOMER = "Customer";
     private static final String FIRST_NAME = "First name";
     private static final String MIDDLE_NAME = "Middle name";
     private static final String LAST_NAME = "Last name";
-    private static final String EMPLOYEE = "Employee";
-    private static final String LOAN_STATE = "State";
-    private static final String CASE = "Case Id";
-    private static final String LOAN_TYPE = "Account type";
     private static final String LOAN_TERM = "Loan term";
     private static final String OFFICE = "Office";
     private static final String PRINCIPAL = "Principal";
+    private static final String CASE = "Case Id";
+
+    private static final String LOAN = "Loan";
+    private static final String PRODUCT = "Type";
+    private static final String STATE = "State";
+    private static final String DATE_RANGE = "Created On";
+    private static final String EMPLOYEE = "Created By";
 
     private final Logger logger;
 
@@ -56,6 +59,7 @@ public class LoanListReportSpecification implements ReportSpecification {
 
     private final HashMap<String, String> customerColumnMapping = new HashMap<>();
     private final HashMap<String, String> loanColumnMapping = new HashMap<>();
+    private final HashMap<String, String> caseColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
     @Autowired
@@ -136,11 +140,17 @@ public class LoanListReportSpecification implements ReportSpecification {
                 "il_cases.term_range_maximum, " +
                 "il_cases.term_range_temporal_unit");
         this.loanColumnMapping.put(PRINCIPAL, "il_cases.balance_range_maximum");
-
         this.loanColumnMapping.put(CASE, "il_cases.case_id");
+
+        this.caseColumnMapping.put(LOAN, "cases.identifier");
+        this.caseColumnMapping.put(PRODUCT, "cases.product_identifier");
+        this.caseColumnMapping.put(STATE, "cases.current_state");
+        this.caseColumnMapping.put(DATE_RANGE, "cases.created_on");
+        this.caseColumnMapping.put(EMPLOYEE, "cases.created_by");
 
         this.allColumnMapping.putAll(customerColumnMapping);
         this.allColumnMapping.putAll(loanColumnMapping);
+        this.allColumnMapping.putAll(caseColumnMapping);
     }
 
     private Header createHeader(List<DisplayableField> displayableFields) {
@@ -191,9 +201,15 @@ public class LoanListReportSpecification implements ReportSpecification {
             final List<?> accountResultList = accountQuery.getResultList();
 
             accountResultList.forEach(accountResult -> {
+
+                final String caseIdentifier;
+
                 if (accountResult instanceof Object[]) {
                     final Object[] accountResultValues;
                     accountResultValues = (Object[]) accountResult;
+
+                    caseIdentifier = accountResultValues[0].toString();
+
                     for (final Object loan: accountResultValues) {
                         final Value value = new Value();
                         if (loan != null) {
@@ -204,7 +220,31 @@ public class LoanListReportSpecification implements ReportSpecification {
 
                         row.getValues().add(value);
                     }
+                }else {
+                    caseIdentifier = accountResult.toString();
+
+                    final Value value = new Value();
+                    value.setValues(new String[]{accountResult.toString()});
+                    row.getValues().add(value);
                 }
+
+                final Query caseQuery = this.entityManager.createNativeQuery(this.buildCaseQuery(reportRequest, caseIdentifier));
+
+                final List<?> caseResultList = caseQuery.getResultList();
+
+                caseResultList.forEach(loanCase -> {
+                    final Object[] loanCaseResultValues = (Object[]) loanCase;
+
+                    for (final Object loan : loanCaseResultValues) {
+                        final Value value = new Value();
+                        if (loan != null) {
+                            value.setValues(new String[]{loan.toString()});
+                        } else {
+                            value.setValues(new String[]{});
+                        }
+                        row.getValues().add(value);
+                    }
+                });
             });
 
             rows.add(row);
@@ -221,8 +261,14 @@ public class LoanListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(LAST_NAME, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(OFFICE, Type.TEXT).build(),
                 DisplayableFieldBuilder.create(CASE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(PRINCIPAL, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(PRINCIPAL, Type.TEXT).mandatory().build()
+
+                DisplayableFieldBuilder.create(LOAN, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(STATE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(PRODUCT, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(DATE_RANGE, Type.TEXT).mandatory().build()
         );
     }
 
@@ -296,8 +342,19 @@ public class LoanListReportSpecification implements ReportSpecification {
                 "ORDER BY il_cases.case_id";
     }
 
-    //Need this for getting details from cases table
-    private String buildLoanCaseQuery(final ReportRequest reportRequest, final String customerIdentifier){
-        return null;
+    private String buildCaseQuery(final ReportRequest reportRequest, final String caseIdentifier){
+        final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
+        final ArrayList<String> columns = new ArrayList<>();
+        displayableFields.forEach(displayableField -> {
+            final String column = this.caseColumnMapping.get(displayableField.getName());
+            if (column != null) {
+                columns.add(column);
+            }
+        });
+
+        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
+                "FROM bastet_cases cases " +
+                "LEFT JOIN bastet_il_cases il_cases on cases.id = il_cases.case_id " +
+                "WHERE il_cases.case_id ='" + caseIdentifier + "' ";
     }
 }
