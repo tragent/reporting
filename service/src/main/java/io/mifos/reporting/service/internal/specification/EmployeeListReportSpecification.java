@@ -141,9 +141,10 @@ public class EmployeeListReportSpecification implements ReportSpecification {
 
             final String officeIdentifier;
 
-            final Object[] resultValues = (Object[]) result;
+            if (result instanceof Object[]) {
+                final Object[] resultValues = (Object[]) result;
 
-            officeIdentifier = resultValues[0].toString();
+                officeIdentifier = resultValues[0].toString();
 
                 for (final Object resultValue : resultValues) {
                     final Value value = new Value();
@@ -155,13 +156,20 @@ public class EmployeeListReportSpecification implements ReportSpecification {
 
                     row.getValues().add(value);
                 }
+            } else {
+                officeIdentifier = result.toString();
+
+                final Value value = new Value();
+                value.setValues(new String[]{result.toString()});
+                row.getValues().add(value);
+            }
 
             final String officeQueryString = this.buildOfficeQuery(reportRequest, officeIdentifier);
             if (officeQueryString != null) {
                 final Query officeQuery = this.entityManager.createNativeQuery(officeQueryString);
                 final List<?> resultList = officeQuery.getResultList();
                 final Value officeValue = new Value();
-                officeValue.setValues(new String[]{resultList.get(0).toString() == null ? " " : resultList.get(0).toString()});
+                officeValue.setValues(new String[]{resultList.get(0).toString()});
                 row.getValues().add(officeValue);
             }
 
