@@ -65,7 +65,7 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
         final ReportDefinition reportDefinition = new ReportDefinition();
         reportDefinition.setIdentifier("Incomestatement");
         reportDefinition.setName("Income Statement");
-        reportDefinition.setDescription("Income statement listing.");
+        reportDefinition.setDescription("Income statement report");
         reportDefinition.setQueryParameters(this.buildQueryParameters());
         reportDefinition.setDisplayableFields(this.buildDisplayableFields());
         return reportDefinition;
