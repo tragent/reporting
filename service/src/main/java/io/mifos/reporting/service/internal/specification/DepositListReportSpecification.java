@@ -192,8 +192,13 @@ public class DepositListReportSpecification implements ReportSpecification {
             final Query accountQuery = this.entityManager.createNativeQuery(this.buildDepositAccountQuery(reportRequest, customerIdentifier));
             final List<?> accountResultList = accountQuery.getResultList();
 
-            final ArrayList<String> values = new ArrayList<>();
             final ArrayList<String> products = new ArrayList<>();
+            final ArrayList<String> depositAccountNumber = new ArrayList<>();
+            final ArrayList<String> depositType = new ArrayList<>();
+            final ArrayList<String> status = new ArrayList<>();
+            final ArrayList<String> createdBy = new ArrayList<>();
+            final ArrayList<String> dateCreated = new ArrayList<>();
+
             accountResultList.forEach(accountResult -> {
 
                 final String productIdentifier;
@@ -208,25 +213,37 @@ public class DepositListReportSpecification implements ReportSpecification {
                     depositProductResultList.forEach(product -> {
                         final Object[] productResultValues = (Object[]) product;
 
-                        for (final Object prod : productResultValues) {
-                            //final Value value = new Value();
-                            if (prod != null) {
-                                //value.setValues(new String[]{prod.toString()});
-                                products.add(prod.toString());
-                            } else {
-                                //value.setValues(new String[]{});
-                                products.add(" ");
+                        for (int i = 0; i < productResultValues.length; i++) {
+
+                            if (i == 0 && productResultValues[0] != null) {
+                                products.add(productResultValues[0].toString());
                             }
-                           // row.getValues().add(value);
+
+                            if (i == 1 && productResultValues[1] != null) {
+                                depositType.add(productResultValues[1].toString());
+                            }
+
                         }
                     });
 
 
                     for (int i = 1; i < accountResultValues.length ; i++) {
-                        //final Value value = new Value();
-                        //value.setValues(new String[]{accountResultValues[i].toString()});
-                        values.add(accountResultValues[i].toString());
-                        //row.getValues().add(value);
+                        if (i == 1 && accountResultValues[1] != null){
+                            depositAccountNumber.add(accountResultValues[1].toString());
+                        }
+
+                        if (i == 2  && accountResultValues[2] != null){
+                            status.add(accountResultValues[2].toString());
+                        }
+
+                        if (i == 3 && accountResultValues[3] != null){
+                            createdBy.add(accountResultValues[3].toString());
+                        }
+
+                        if (i == 4 && accountResultValues[4] != null){
+                            dateCreated.add(accountResultValues[4].toString());
+                        }
+
                     }
                 }
             });
@@ -235,9 +252,25 @@ public class DepositListReportSpecification implements ReportSpecification {
             productValue.setValues(products.toArray(new String[products.size()]));
             row.getValues().add(productValue);
 
-            final Value accountValue = new Value();
-            accountValue.setValues(values.toArray(new String[values.size()]));
-            row.getValues().add(accountValue);
+            final Value depositTypeValue = new Value();
+            depositTypeValue.setValues(depositType.toArray(new String[depositAccountNumber.size()]));
+            row.getValues().add(depositTypeValue);
+
+            final Value depositAccountNumberValue = new Value();
+            depositAccountNumberValue.setValues(depositAccountNumber.toArray(new String[depositType.size()]));
+            row.getValues().add(depositAccountNumberValue);
+
+            final Value statusValue = new Value();
+            statusValue.setValues(status.toArray(new String[status.size()]));
+            row.getValues().add(statusValue);
+
+            final Value createdByValue = new Value();
+            createdByValue.setValues(createdBy.toArray(new String[createdBy.size()]));
+            row.getValues().add(createdByValue);
+
+            final Value dateCreatedValue = new Value();
+            dateCreatedValue.setValues(dateCreated.toArray(new String[dateCreated.size()]));
+            row.getValues().add(dateCreatedValue);
 
             rows.add(row);
         });
@@ -337,8 +370,8 @@ public class DepositListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(ACCOUNT_TYPE, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(ACCOUNT_NUMBER, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(STATE,Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(DATE_RANGE, Type.DATE).build()
+                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(DATE_RANGE, Type.DATE).mandatory().build()
         );
 
     }
