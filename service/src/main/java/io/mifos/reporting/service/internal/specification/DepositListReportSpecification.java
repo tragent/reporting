@@ -232,7 +232,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             });
 
             final Value productValue = new Value();
-            productValue.setValues(values.toArray(new String[products.size()]));
+            productValue.setValues(products.toArray(new String[products.size()]));
             row.getValues().add(productValue);
 
             final Value accountValue = new Value();
