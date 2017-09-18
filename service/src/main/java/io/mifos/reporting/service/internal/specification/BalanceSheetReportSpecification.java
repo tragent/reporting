@@ -192,11 +192,6 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
                             + subLedgerResultValues[1].toString() + " " + subLedgerResultValues[2];
                     values.add(subLedgerValue);
 
-                    final Value subLedgerVal = new Value();
-                    subLedgerVal.setValues(values.toArray(new String[values.size()]));
-                    row.getValues().add(subLedgerVal);
-
-
                     final String accountQueryString = this.buildAccountQuery(reportRequest, parentLedgerIdentifier);
 
                     final Query accountQuery = this.entityManager.createNativeQuery(accountQueryString);
@@ -225,6 +220,11 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
                         }
 
                     });
+
+
+                    final Value subLedgerVal = new Value();
+                    subLedgerVal.setValues(values.toArray(new String[values.size()]));
+                    row.getValues().add(subLedgerVal);
                 }
             });
 

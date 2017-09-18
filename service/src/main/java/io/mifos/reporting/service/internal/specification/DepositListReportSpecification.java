@@ -193,6 +193,7 @@ public class DepositListReportSpecification implements ReportSpecification {
             final List<?> accountResultList = accountQuery.getResultList();
 
             final ArrayList<String> values = new ArrayList<>();
+            final ArrayList<String> products = new ArrayList<>();
             accountResultList.forEach(accountResult -> {
 
                 final String productIdentifier;
@@ -208,15 +209,15 @@ public class DepositListReportSpecification implements ReportSpecification {
                         final Object[] productResultValues = (Object[]) product;
 
                         for (final Object prod : productResultValues) {
-                            final Value value = new Value();
+                            //final Value value = new Value();
                             if (prod != null) {
-                                value.setValues(new String[]{prod.toString()});
-                                //values.add(prod.toString());
+                                //value.setValues(new String[]{prod.toString()});
+                                products.add(prod.toString());
                             } else {
-                                value.setValues(new String[]{});
-                                //values.add(prod.toString());
+                                //value.setValues(new String[]{});
+                                products.add(" ");
                             }
-                            row.getValues().add(value);
+                           // row.getValues().add(value);
                         }
                     });
 
@@ -229,6 +230,11 @@ public class DepositListReportSpecification implements ReportSpecification {
                     }
                 }
             });
+
+            final Value productValue = new Value();
+            productValue.setValues(values.toArray(new String[products.size()]));
+            row.getValues().add(productValue);
+
             final Value accountValue = new Value();
             accountValue.setValues(values.toArray(new String[values.size()]));
             row.getValues().add(accountValue);
