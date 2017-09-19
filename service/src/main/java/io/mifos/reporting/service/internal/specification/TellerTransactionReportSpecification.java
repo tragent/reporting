@@ -357,7 +357,8 @@ public class TellerTransactionReportSpecification implements ReportSpecification
 
         query.append(columns.stream().collect(Collectors.joining(", ")))
                 .append(" FROM ")
-                .append("tajet_teller_transactions trx ");
+                .append("tajet_teller_transactions trx " +
+                        "LEFT JOIN tajet_teller teller on trx.teller_id = teller.id ");
 
         query.append("WHERE teller.id ='" + tellerIdentifier + "' AND ");
 
