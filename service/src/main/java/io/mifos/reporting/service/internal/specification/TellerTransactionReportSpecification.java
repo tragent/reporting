@@ -360,7 +360,7 @@ public class TellerTransactionReportSpecification implements ReportSpecification
                 .append("tajet_teller_transactions trx " +
                         "LEFT JOIN tajet_teller teller on trx.teller_id = teller.id ");
 
-        query.append("WHERE teller.id ='" + tellerIdentifier + "' AND ");
+        query.append("WHERE teller.id ='" + tellerIdentifier + "'");
 
         final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
         if (!queryParameters.isEmpty()) {
@@ -374,6 +374,7 @@ public class TellerTransactionReportSpecification implements ReportSpecification
             });
 
             if (!criteria.isEmpty()) {
+                query.append(" AND ");
                 query.append(criteria.stream().collect(Collectors.joining(" AND ")));
             }
 
