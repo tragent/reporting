@@ -39,10 +39,11 @@ public class LoanListReportSpecification implements ReportSpecification {
 
 
     private static final String CUSTOMER = "Customer";
-    private static final String FIRST_NAME = "First name";
-    private static final String MIDDLE_NAME = "Middle name";
-    private static final String LAST_NAME = "Last name";
-    private static final String LOAN_TERM = "Loan term";
+    private static final String FIRST_NAME = "First Name";
+    private static final String MIDDLE_NAME = "Middle Name";
+    private static final String LAST_NAME = "Last Name";
+    private static final String LOAN_TERM = "Loan Term";
+    private static final String TIME_UNIT = "Time Unit";
     private static final String OFFICE = "Office";
     private static final String PRINCIPAL = "Principal";
     private static final String CASE = "Case Id";
@@ -136,9 +137,8 @@ public class LoanListReportSpecification implements ReportSpecification {
         this.customerColumnMapping.put(LAST_NAME, "cst.surname");
         this.customerColumnMapping.put(OFFICE, "cst.assigned_office");
 
-        this.loanColumnMapping.put(LOAN_TERM,
-                "il_cases.term_range_maximum, " +
-                "il_cases.term_range_temporal_unit");
+        this.loanColumnMapping.put(LOAN_TERM, "il_cases.term_range_maximum");
+        this.loanColumnMapping.put(TIME_UNIT, "il_cases.term_range_temporal_unit");
         this.loanColumnMapping.put(PRINCIPAL, "il_cases.balance_range_maximum");
         this.loanColumnMapping.put(CASE, "il_cases.case_id");
 
@@ -263,11 +263,12 @@ public class LoanListReportSpecification implements ReportSpecification {
                 DisplayableFieldBuilder.create(CASE, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(PRINCIPAL, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(LOAN_TERM, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(TIME_UNIT, Type.TEXT).mandatory().build(),
 
                 DisplayableFieldBuilder.create(LOAN, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(STATE, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(PRODUCT, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(EMPLOYEE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(PRODUCT, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(DATE_RANGE, Type.TEXT).mandatory().build()
         );
     }
