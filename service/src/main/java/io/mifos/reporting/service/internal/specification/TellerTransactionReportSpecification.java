@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Report(category = "Teller", identifier = "Transactions")
-public class TellerCashierDailyBalanceReportSpecification implements ReportSpecification {
+public class TellerTransactionReportSpecification implements ReportSpecification {
 
     private static final String TELLER_ID = "Teller Id";
     private static final String TELLER = "Teller";
@@ -56,8 +56,8 @@ public class TellerCashierDailyBalanceReportSpecification implements ReportSpeci
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
     @Autowired
-    public TellerCashierDailyBalanceReportSpecification(@Qualifier(ServiceConstants.LOGGER_NAME) final Logger logger,
-                                                        final EntityManager entityManager) {
+    public TellerTransactionReportSpecification(@Qualifier(ServiceConstants.LOGGER_NAME) final Logger logger,
+                                                final EntityManager entityManager) {
         super();
         this.logger = logger;
         this.entityManager = entityManager;
