@@ -343,6 +343,9 @@ public class TellerTransactionReportSpecification implements ReportSpecification
     }
 
     private String buildTellerTransactionQuery(final ReportRequest reportRequest, final String tellerIdentifier) {
+
+        final StringBuilder query = new StringBuilder("SELECT ");
+
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
@@ -352,10 +355,31 @@ public class TellerTransactionReportSpecification implements ReportSpecification
             }
         });
 
-        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                "FROM tajet_teller_transactions trx " +
-                "LEFT JOIN tajet_teller teller on trx.teller_id = teller.id " +
-                "WHERE teller.id ='" + tellerIdentifier + "' ";
+        query.append(columns.stream().collect(Collectors.joining(", ")))
+                .append(" FROM ")
+                .append("tajet_teller_transactions trx ");
+
+        query.append("WHERE teller.id ='" + tellerIdentifier + "' AND ");
+
+        final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
+        if (!queryParameters.isEmpty()) {
+            final ArrayList<String> criteria = new ArrayList<>();
+            queryParameters.forEach(queryParameter -> {
+                if (queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
+                    criteria.add(
+                            CriteriaBuilder.buildCriteria(this.transactionColumnMapping.get(queryParameter.getName()), queryParameter)
+                    );
+                }
+            });
+
+            if (!criteria.isEmpty()) {
+                query.append(criteria.stream().collect(Collectors.joining(" AND ")));
+            }
+
+        }
+
+        return query.toString();
     }
+
 
 }
