@@ -190,21 +190,82 @@ public class TellerTransactionReportSpecification implements ReportSpecification
 
             final Query transactionQuery = this.entityManager.createNativeQuery(transactionQueryString);
             final List<?> resultList = transactionQuery.getResultList();
+
+            final ArrayList<String> transactionType = new ArrayList<>();
+            final ArrayList<String> transactionDate = new ArrayList<>();
+            final ArrayList<String> customer = new ArrayList<>();
+            final ArrayList<String> source = new ArrayList<>();
+            final ArrayList<String> target = new ArrayList<>();
+            final ArrayList<String> clerk = new ArrayList<>();
+            final ArrayList<String> amount = new ArrayList<>();
+            final ArrayList<String> status = new ArrayList<>();
             resultList.forEach(transaction -> {
                         final Object[] transactionValue = (Object[]) transaction;
 
-                        for (final Object resultValue : transactionValue) {
-                            final Value value = new Value();
-                            if (resultValue != null) {
-                                value.setValues(new String[]{resultValue.toString()});
-                            } else {
-                                value.setValues(new String[]{});
+                        for (int i = 0; i < transactionValue.length; i++) {
+                            if (i == 0 && transactionValue[0] != null) {
+                                transactionType.add(transactionValue[0].toString());
                             }
 
-                            row.getValues().add(value);
+                            if (i == 1 && transactionValue[1] != null) {
+                                transactionDate.add(transactionValue[1].toString());
+                            }
+
+                            if (i == 2 && transactionValue[2] != null) {
+                                customer.add(transactionValue[2].toString());
+                            }
+
+                            if (i == 3 && transactionValue[3] != null) {
+                                source.add(transactionValue[3].toString());
+                            }
+
+                            if (i == 4 && transactionValue[4] != null) {
+                                target.add(transactionValue[4].toString());
+                            }
+                            if (i == 5 && transactionValue[5] != null) {
+                                clerk.add(transactionValue[5].toString());
+                            }
+                            if (i == 6 && transactionValue[6] != null) {
+                                amount.add(transactionValue[6].toString());
+                            }
+                            if (i == 7 && transactionValue[7] != null) {
+                                status.add(transactionValue[7].toString());
+                            }
                         }
                     }
             );
+
+            final Value transactionTypeValue = new Value();
+            transactionTypeValue.setValues(transactionType.toArray(new String[transactionType.size()]));
+            row.getValues().add(transactionTypeValue);
+
+            final Value transactionDateValue = new Value();
+            transactionDateValue.setValues(transactionDate.toArray(new String[transactionDate.size()]));
+            row.getValues().add(transactionDateValue);
+
+            final Value customerValue = new Value();
+            customerValue.setValues(customer.toArray(new String[customer.size()]));
+            row.getValues().add(customerValue);
+
+            final Value sourceValue = new Value();
+            sourceValue.setValues(source.toArray(new String[source.size()]));
+            row.getValues().add(sourceValue);
+
+            final Value targetValue = new Value();
+            targetValue.setValues(target.toArray(new String[target.size()]));
+            row.getValues().add(targetValue);
+
+            final Value clerkValue = new Value();
+            clerkValue.setValues(clerk.toArray(new String[clerk.size()]));
+            row.getValues().add(clerkValue);
+
+            final Value amountValue = new Value();
+            amountValue.setValues(amount.toArray(new String[amount.size()]));
+            row.getValues().add(amountValue);
+
+            final Value statusValue = new Value();
+            statusValue.setValues(status.toArray(new String[status.size()]));
+            row.getValues().add(statusValue);
 
             rows.add(row);
         });
@@ -217,12 +278,13 @@ public class TellerTransactionReportSpecification implements ReportSpecification
         return Arrays.asList(
                 DisplayableFieldBuilder.create(TELLER_ID, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(TELLER, Type.TEXT).mandatory().build(),
+
                 DisplayableFieldBuilder.create(TRANSACTION_TYPE, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(TRANSACTION_DATE, Type.DATE).mandatory().build(),
                 DisplayableFieldBuilder.create(CUSTOMER, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(SOURCE, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(TARGET, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(CLERK, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(TARGET, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(CLERK, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(AMOUNT, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(STATUS, Type.TEXT).mandatory().build()
         );
