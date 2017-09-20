@@ -313,6 +313,7 @@ public class TellerTransactionReportSpecification implements ReportSpecification
                 .append(" FROM ")
                 .append("tajet_teller teller ");
 
+        /*
         final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
         if (!queryParameters.isEmpty()) {
             final ArrayList<String> criteria = new ArrayList<>();
@@ -329,7 +330,9 @@ public class TellerTransactionReportSpecification implements ReportSpecification
                 query.append(criteria.stream().collect(Collectors.joining(" AND ")));
             }
 
+
         }
+        */
         query.append(" ORDER BY teller.id");
 
         query.append(" LIMIT ");
