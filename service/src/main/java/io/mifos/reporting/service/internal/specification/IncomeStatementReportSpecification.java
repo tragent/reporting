@@ -145,13 +145,15 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
         final ArrayList<Row> rows = new ArrayList<>();
 
         final Row row = new Row();
-        final Value[] subTotal = {new Value()};
+        final Value subTotal = new Value();
         row.setValues(new ArrayList<>());
-        final Double[] rst = new Double[1];
+       // final BigDecimal[] rst = new BigDecimal[1];
+        BigDecimal revenueSubTotal = new BigDecimal("0.000");
 
         accountResultList.forEach(result -> {
 
-            Double revenueSubTotal = 0.0;
+
+
             if (result instanceof Object[]) {
                 final Object[] resultValues;
                 resultValues = (Object[]) result;
@@ -165,7 +167,7 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
                     row.getValues().add(revValue);
 
                     if (i == 3){
-                        revenueSubTotal =+ (Double) resultValues[3];
+                        revenueSubTotal.add((BigDecimal)resultValues[3]);
                     }
                 }
             } else {
@@ -174,13 +176,13 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
                 row.getValues().add(value);
             }
 
-            rst[0] = revenueSubTotal;
+            //rst[0] = revenueSubTotal;
 
 
         });
 
-        subTotal[0].setValues(new String[]{new StringBuilder().append("SUB TOTAL ").append(rst[0]).toString()});
-        row.getValues().add(subTotal[0]);
+        subTotal.setValues(new String[]{new StringBuilder().append("SUB TOTAL ").append(revenueSubTotal).toString()});
+        row.getValues().add(subTotal);
 
         rows.add(row);
 
