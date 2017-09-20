@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -142,31 +143,46 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
 
     private List<Row> buildRows(ReportRequest reportRequest, List<?> accountResultList) {
         final ArrayList<Row> rows = new ArrayList<>();
-        accountResultList.forEach(result -> {
-            final Row row = new Row();
-            row.setValues(new ArrayList<>());
 
+        final Row row = new Row();
+        final Value[] subTotal = {new Value()};
+        row.setValues(new ArrayList<>());
+        final Double[] rst = new Double[1];
+
+        accountResultList.forEach(result -> {
+
+            Double revenueSubTotal = 0.0;
             if (result instanceof Object[]) {
                 final Object[] resultValues;
                 resultValues = (Object[]) result;
 
-                for(final Object resultVal : resultValues) {
-                    final Value val;
-                    val = new Value();
+                for (int i = 0; i < resultValues.length; i++){
+                    final Value revValue = new Value();
+                    if (resultValues[i] != null){
+                        revValue.setValues(new String[]{resultValues[i].toString()});
+                    }else revValue.setValues(new String[]{});
 
-                    if (resultVal != null) {
-                        val.setValues(new String[]{resultVal.toString()});
-                    } else val.setValues(new String[]{});
-                    
-                    row.getValues().add(val);
+                    row.getValues().add(revValue);
+
+                    if (i == 3){
+                        revenueSubTotal =+ (Double) resultValues[3];
+                    }
                 }
             } else {
                 final Value value = new Value();
                 value.setValues(new String[]{result.toString()});
                 row.getValues().add(value);
             }
-            rows.add(row);
+
+            rst[0] = revenueSubTotal;
+
+
         });
+
+        subTotal[0].setValues(new String[]{new StringBuilder().append("SUB TOTAL ").append(rst[0]).toString()});
+        row.getValues().add(subTotal[0]);
+
+        rows.add(row);
 
         return rows;
     }
@@ -185,52 +201,29 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
 
         query.append(columns.stream().collect(Collectors.joining(", ")))
                 .append(" FROM ")
-                .append("thoth_accounts acc ");
+                .append("thoth_accounts acc ")
+                .append("WHERE acc.a_type = 'REVENUE' ");
 
-        final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
-        if (!queryParameters.isEmpty()) {
-            final ArrayList<String> criteria = new ArrayList<>();
-            queryParameters.forEach(queryParameter -> {
-                if(queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
-                    criteria.add(
-                            CriteriaBuilder.buildCriteria(this.accountColumnMapping.get(queryParameter.getName()), queryParameter)
-                    );
-                }
-            });
-
-            if (!criteria.isEmpty()) {
-                query.append(" WHERE ");
-                query.append(criteria.stream().collect(Collectors.joining(" AND ")));
-            }
-
-        }
         query.append(" ORDER BY acc.identifier");
-
-        query.append(" LIMIT ");
-        query.append(size);
-        if (pageIndex > 0) {
-            query.append(" OFFSET ");
-            query.append(size * pageIndex);
-        }
 
         return query.toString();
     }
 
     private List<DisplayableField> buildDisplayableFields() {
         return Arrays.asList(
-                DisplayableFieldBuilder.create(TYPE, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(TYPE, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(IDENTIFIER, Type.TEXT).mandatory().build(),
                 DisplayableFieldBuilder.create(NAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(HOLDER, Type.TEXT).build(),
-                DisplayableFieldBuilder.create(BALANCE, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(STATE, Type.TEXT).mandatory().build()
+                //DisplayableFieldBuilder.create(HOLDER, Type.TEXT).build(),
+                DisplayableFieldBuilder.create(BALANCE, Type.TEXT).mandatory().build()
+               // DisplayableFieldBuilder.create(STATE, Type.TEXT).mandatory().build()
         );
     }
 
     private List<QueryParameter> buildQueryParameters() {
         return Arrays.asList(
-                QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build(),
-                QueryParameterBuilder.create(STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
+               // QueryParameterBuilder.create(DATE_RANGE, Type.DATE).operator(QueryParameter.Operator.BETWEEN).build(),
+                //QueryParameterBuilder.create(STATE, Type.TEXT).operator(QueryParameter.Operator.IN).build()
         );
     }
 }
