@@ -144,10 +144,10 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
     private List<Row> buildRows(ReportRequest reportRequest, List<?> accountResultList) {
         final ArrayList<Row> rows = new ArrayList<>();
         
-        final Row totalRow = new Row();
-        totalRow.setValues(new ArrayList<>());
+        final Row totalRevenueRow = new Row();
+        totalRevenueRow.setValues(new ArrayList<>());
 
-        final Value subTotal = new Value();
+        final Value subRevenueTotal = new Value();
 
         final BigDecimal[] revenueSubTotal = {new BigDecimal("0.000")};
 
@@ -180,15 +180,68 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
             rows.add(row);
         });
 
-        subTotal.setValues(new String[]{new StringBuilder().append("SUB TOTAL ").append(revenueSubTotal[0]).toString()});
-        totalRow.getValues().add(subTotal);
+        subRevenueTotal.setValues(new String[]{new StringBuilder().append("TOTAL REVENUES").append(revenueSubTotal[0]).toString()});
+        totalRevenueRow.getValues().add(subRevenueTotal);
 
-        rows.add(totalRow);
+        rows.add(totalRevenueRow);
+
+
+        final String expenseQueryString = this.buildExpenseQuery(reportRequest);
+        final Query expenseQuery = this.entityManager.createNativeQuery(expenseQueryString);
+        final List<?> expenseResultList = expenseQuery.getResultList();
+
+        final Row totalExpenseRow = new Row();
+        totalExpenseRow.setValues(new ArrayList<>());
+        final Value subExpenseTotal = new Value();
+
+        final Row netIncomeRow = new Row();
+        netIncomeRow.setValues(new ArrayList<>());
+        final Value netIncomeTotal = new Value();
+
+        final BigDecimal[] expenseSubTotal = {new BigDecimal("0.000")};
+
+        expenseResultList.forEach(result -> {
+
+            final Row row = new Row();
+            row.setValues(new ArrayList<>());
+
+            if (result instanceof Object[]) {
+                final Object[] resultValues;
+                resultValues = (Object[]) result;
+
+                for (int i = 0; i < resultValues.length; i++){
+                    final Value expValue = new Value();
+                    if (resultValues[i] != null) expValue.setValues(new String[]{resultValues[i].toString()});
+                    else expValue.setValues(new String[]{});
+
+                    row.getValues().add(expValue);
+
+                    expenseSubTotal[0] = expenseSubTotal[0].add((BigDecimal)resultValues[3]);
+
+                }
+            } else {
+                final Value value;
+                value = new Value();
+                value.setValues(new String[]{result.toString()});
+                row.getValues().add(value);
+            }
+
+            rows.add(row);
+        });
+
+        subExpenseTotal.setValues(new String[]{new StringBuilder().append("TOTAL EXPENSES ").append(expenseSubTotal[0]).toString()});
+        totalExpenseRow.getValues().add(subExpenseTotal);
+        rows.add(totalExpenseRow);
+
+        final BigDecimal netIncome = revenueSubTotal[0].subtract(expenseSubTotal[0]);
+        netIncomeTotal.setValues(new String[]{new StringBuilder().append("NET INCOME ").append(netIncome).toString()});
+        netIncomeRow.getValues().add(netIncomeTotal);
+        rows.add(netIncomeRow);
 
         return rows;
     }
 
-    private String buildAccountQuery(ReportRequest reportRequest, int pageIndex, int size) {
+    private String buildAccountQuery(final ReportRequest reportRequest, int pageIndex, int size) {
         final StringBuilder query = new StringBuilder("SELECT ");
 
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
@@ -204,6 +257,28 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
                 .append(" FROM ")
                 .append("thoth_accounts acc ")
                 .append("WHERE acc.a_type = 'REVENUE' ");
+
+        query.append(" ORDER BY acc.identifier");
+
+        return query.toString();
+    }
+
+    private String buildExpenseQuery(final ReportRequest reportRequest) {
+        final StringBuilder query = new StringBuilder("SELECT ");
+
+        final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
+        final ArrayList<String> columns = new ArrayList<>();
+        displayableFields.forEach(displayableField -> {
+            final String column = this.accountColumnMapping.get(displayableField.getName());
+            if (column != null) {
+                columns.add(column);
+            }
+        });
+
+        query.append(columns.stream().collect(Collectors.joining(", ")))
+                .append(" FROM ")
+                .append("thoth_accounts acc ")
+                .append("WHERE acc.a_type = 'EXPENSE' ");
 
         query.append(" ORDER BY acc.identifier");
 
