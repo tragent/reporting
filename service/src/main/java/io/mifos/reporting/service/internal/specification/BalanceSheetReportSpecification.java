@@ -21,11 +21,11 @@ import io.mifos.reporting.api.v1.domain.*;
 import io.mifos.reporting.service.ServiceConstants;
 import io.mifos.reporting.service.spi.*;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,45 +37,28 @@ import java.util.stream.Collectors;
 @Report(category = "Accounting", identifier = "Balancesheet")
 public class BalanceSheetReportSpecification implements ReportSpecification {
 
-    private static final String ID = "Id";
+    private static final String DATE_RANGE = "Date range";
+    private static final String TYPE = "Type";
     private static final String IDENTIFIER = "Identifier";
-    private static final String LEDGER = "Ledger";
-
-    private static final String PARENT_LEDGER = "Parent Ledger";
-    private static final String ACCOUNT_IDENFIFIER = "Account Identifier";
-    private static final String ACCOUNT_NAME = "Account Name";
-    private static final String ACCOUNT_BALANCE = "Account Balance";
+    private static final String NAME = "Name";
+    private static final String HOLDER = "Holder";
+    private static final String BALANCE = "Balance";
+    private static final String STATE = "State";
 
     private final Logger logger;
 
     private final EntityManager entityManager;
 
-    private final HashMap<String, String> ledgerColumnMapping = new HashMap<>();
-    private final HashMap<String, String> accountColumnMapping = new HashMap<>();
+    private final HashMap<String, String> accountingColumnMapping = new HashMap<>();
     private final HashMap<String, String> allColumnMapping = new HashMap<>();
 
-    @Autowired
+
     public BalanceSheetReportSpecification(@Qualifier(ServiceConstants.LOGGER_NAME) final Logger logger,
-                                           final EntityManager entityManager) {
+                                              final EntityManager entityManager){
         super();
         this.logger = logger;
         this.entityManager = entityManager;
         this.initializeMapping();
-    }
-
-    private void initializeMapping() {
-        this.ledgerColumnMapping.put(ID, "ledger.id");
-        this.ledgerColumnMapping.put(IDENTIFIER, "ledger.identifier");
-        this.ledgerColumnMapping.put(LEDGER, "ledger.description");
-
-        this.accountColumnMapping.put(PARENT_LEDGER, "acc.ledger_id");
-        this.accountColumnMapping.put(ACCOUNT_IDENFIFIER, "acc.identifier");
-        this.accountColumnMapping.put(ACCOUNT_NAME, "acc.a_name");
-        this.accountColumnMapping.put(ACCOUNT_BALANCE, "acc.balance");
-
-        this.allColumnMapping.putAll(ledgerColumnMapping);
-        this.allColumnMapping.putAll(accountColumnMapping);
-
     }
 
     @Override
@@ -83,29 +66,14 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
         final ReportDefinition reportDefinition = new ReportDefinition();
         reportDefinition.setIdentifier("Balancesheet");
         reportDefinition.setName("Balance Sheet");
-        reportDefinition.setDescription("Balance sheet report");
+        reportDefinition.setDescription("Balance Sheet Report");
         reportDefinition.setQueryParameters(this.buildQueryParameters());
         reportDefinition.setDisplayableFields(this.buildDisplayableFields());
         return reportDefinition;
     }
 
-    private List<DisplayableField> buildDisplayableFields() {
-        return Arrays.asList(
-                DisplayableFieldBuilder.create(ID, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(IDENTIFIER, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(LEDGER, Type.TEXT).mandatory().build(),
-
-                DisplayableFieldBuilder.create(ACCOUNT_IDENFIFIER, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(ACCOUNT_NAME, Type.TEXT).mandatory().build(),
-                DisplayableFieldBuilder.create(ACCOUNT_BALANCE, Type.TEXT).mandatory().build()
-        );    }
-
-    private List<QueryParameter> buildQueryParameters() {
-        return Arrays.asList();
-    }
-
     @Override
-    public ReportPage generateReport(final ReportRequest reportRequest, final int pageIndex, final int size) {
+    public ReportPage generateReport(ReportRequest reportRequest, int pageIndex, int size) {
         final ReportDefinition reportDefinition = this.getReportDefinition();
         this.logger.info("Generating report {0}.", reportDefinition.getIdentifier());
 
@@ -114,12 +82,12 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
         reportPage.setDescription(reportDefinition.getDescription());
         reportPage.setHeader(this.createHeader(reportRequest.getDisplayableFields()));
 
-        final Query customerQuery = this.entityManager.createNativeQuery(this.buildLedgerQuery(reportRequest, pageIndex, size));
-        final List<?> customerResultList = customerQuery.getResultList();
-        reportPage.setRows(this.buildRows(reportRequest, customerResultList));
+        final Query accountQuery = this.entityManager.createNativeQuery(this.buildAssetQuery(reportRequest, pageIndex, size));
+        final List<?> accountResultList =  accountQuery.getResultList();
+        reportPage.setRows(this.buildRows(reportRequest, accountResultList));
 
         reportPage.setHasMore(
-                !this.entityManager.createNativeQuery(this.buildLedgerQuery(reportRequest, pageIndex + 1, size))
+                !this.entityManager.createNativeQuery(this.buildAssetQuery(reportRequest, pageIndex + 1, size))
                         .getResultList().isEmpty()
         );
 
@@ -129,8 +97,8 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
     }
 
     @Override
-    public void validate(final ReportRequest reportRequest) throws IllegalArgumentException {
-        final ArrayList<String> unknownFields = new ArrayList<>();
+    public void validate(ReportRequest reportRequest) throws IllegalArgumentException {
+        final ArrayList<String> unknownFields =  new ArrayList<>();
         reportRequest.getQueryParameters().forEach(queryParameter -> {
             if (!this.allColumnMapping.keySet().contains(queryParameter.getName())) {
                 unknownFields.add(queryParameter.getName());
@@ -150,7 +118,19 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
         }
     }
 
-    private Header createHeader(final List<DisplayableField> displayableFields) {
+    private void initializeMapping() {
+        this.accountingColumnMapping.put(DATE_RANGE, "acc.created_on");
+        this.accountingColumnMapping.put(TYPE, "acc.a_type");
+        this.accountingColumnMapping.put(IDENTIFIER, "acc.identifier");
+        this.accountingColumnMapping.put(NAME, "acc.a_name");
+        this.accountingColumnMapping.put(HOLDER, "acc.holders");
+        this.accountingColumnMapping.put(BALANCE, "acc.balance");
+        this.accountingColumnMapping.put(STATE, "acc.a_state");
+
+        this.allColumnMapping.putAll(accountingColumnMapping);
+    }
+
+    private Header createHeader(List<DisplayableField> displayableFields) {
         final Header header = new Header();
         header.setColumnNames(
                 displayableFields
@@ -161,101 +141,113 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
         return header;
     }
 
-
-    private List<Row> buildRows(final ReportRequest reportRequest, final List<?> ledgerResultList) {
+    private List<Row> buildRows(ReportRequest reportRequest, List<?> accountResultList) {
         final ArrayList<Row> rows = new ArrayList<>();
 
-        ledgerResultList.forEach(result -> {
+        final Row totalRevenueRow = new Row();
+        totalRevenueRow.setValues(new ArrayList<>());
+
+        final Value subRevenueTotal = new Value();
+
+        final BigDecimal[] revenueSubTotal = {new BigDecimal("0.000")};
+
+        accountResultList.forEach(result -> {
+
             final Row row = new Row();
             row.setValues(new ArrayList<>());
 
-            final String ledgerIdentifier;
-
             if (result instanceof Object[]) {
-                final Object[] resultValues = (Object[]) result;
+                final Object[] resultValues;
+                resultValues = (Object[]) result;
 
-                ledgerIdentifier = resultValues[0].toString();
+                for (int i = 0; i < resultValues.length; i++){
+                    final Value revValue = new Value();
+                    if (resultValues[i] != null){
+                        revValue.setValues(new String[]{resultValues[i].toString()});
+                    }else revValue.setValues(new String[]{});
 
-                for (final Object resultValue : resultValues) {
-                    final Value value = new Value();
-                    if (resultValue != null) {
-                        value.setValues(new String[]{resultValue.toString()});
-                    } else {
-                        value.setValues(new String[]{});
-                    }
+                    row.getValues().add(revValue);
 
-                    row.getValues().add(value);
+                    revenueSubTotal[0] = revenueSubTotal[0].add((BigDecimal)resultValues[3]);
+
                 }
             } else {
-                ledgerIdentifier = result.toString();
-
                 final Value value = new Value();
                 value.setValues(new String[]{result.toString()});
                 row.getValues().add(value);
             }
 
-            final Query subLedgerQuery = this.entityManager.createNativeQuery(this.buildSubLedgerQuery(reportRequest, ledgerIdentifier));
-            final List<?> subLedgerResultList = subLedgerQuery.getResultList();
-            final ArrayList<String> values = new ArrayList<>();
-            subLedgerResultList.forEach(subLedgerResult -> {
-                if (subLedgerResult instanceof Object[]) {
-                    final Object[] subLedgerResultValues = (Object[]) subLedgerResult;
+            rows.add(row);
+        });
 
-                    final String parentLedgerIdentifier = subLedgerResultValues[0].toString();
+        subRevenueTotal.setValues(new String[]{new StringBuilder().append("TOTAL ASSETS ").append(revenueSubTotal[0]).toString()});
+        totalRevenueRow.getValues().add(subRevenueTotal);
 
-                    final String subLedgerValue = subLedgerResultValues[0].toString() + " "
-                            + subLedgerResultValues[1].toString() + " " + subLedgerResultValues[2];
-                    values.add(subLedgerValue);
-
-                    final String accountQueryString = this.buildAccountQuery(reportRequest, parentLedgerIdentifier);
-
-                    final Query accountQuery = this.entityManager.createNativeQuery(accountQueryString);
-
-                    final List<?> accountResultList = accountQuery.getResultList();
-
-                    accountResultList.forEach(accountResult -> {
-
-                        if (accountResult instanceof Object[]) {
-                            final Object[] resultValues = (Object[]) accountResult;
-
-                            for (final Object resultValue : resultValues) {
-                                final Value value = new Value();
-                                if (resultValue != null) {
-                                    value.setValues(new String[]{resultValue.toString()});
-                                } else {
-                                    value.setValues(new String[]{});
-                                }
-
-                                row.getValues().add(value);
-                            }
-                        } else {
-                            final Value value = new Value();
-                            value.setValues(new String[]{accountResult.toString()});
-                            row.getValues().add(value);
-                        }
-
-                    });
+        rows.add(totalRevenueRow);
 
 
-                    final Value subLedgerVal = new Value();
-                    subLedgerVal.setValues(values.toArray(new String[values.size()]));
-                    row.getValues().add(subLedgerVal);
+        final String expenseQueryString = this.buildLiabilityQuery(reportRequest);
+        final Query expenseQuery = this.entityManager.createNativeQuery(expenseQueryString);
+        final List<?> expenseResultList = expenseQuery.getResultList();
+
+        final Row totalExpenseRow = new Row();
+        totalExpenseRow.setValues(new ArrayList<>());
+        final Value subExpenseTotal = new Value();
+
+        final Row netIncomeRow = new Row();
+        netIncomeRow.setValues(new ArrayList<>());
+        final Value netIncomeTotal = new Value();
+
+        final BigDecimal[] expenseSubTotal = {new BigDecimal("0.000")};
+
+        expenseResultList.forEach(result -> {
+
+            final Row row = new Row();
+            row.setValues(new ArrayList<>());
+
+            if (result instanceof Object[]) {
+                final Object[] resultValues;
+                resultValues = (Object[]) result;
+
+                for (int i = 0; i < resultValues.length; i++){
+                    final Value expValue = new Value();
+                    if (resultValues[i] != null) expValue.setValues(new String[]{resultValues[i].toString()});
+                    else expValue.setValues(new String[]{});
+
+                    row.getValues().add(expValue);
+
+                    expenseSubTotal[0] = expenseSubTotal[0].add((BigDecimal)resultValues[3]);
+
                 }
-            });
+            } else {
+                final Value value;
+                value = new Value();
+                value.setValues(new String[]{result.toString()});
+                row.getValues().add(value);
+            }
 
             rows.add(row);
         });
 
+        subExpenseTotal.setValues(new String[]{new StringBuilder().append("TOTAL LIABILITIES ").append(expenseSubTotal[0]).toString()});
+        totalExpenseRow.getValues().add(subExpenseTotal);
+        rows.add(totalExpenseRow);
+
+        final BigDecimal netIncome = revenueSubTotal[0].subtract(expenseSubTotal[0]);
+        netIncomeTotal.setValues(new String[]{new StringBuilder().append("TOTAL ASSETS and LIABILITIES ").append(netIncome).toString()});
+        netIncomeRow.getValues().add(netIncomeTotal);
+        rows.add(netIncomeRow);
+
         return rows;
     }
 
-    private String buildLedgerQuery(final ReportRequest reportRequest, int pageIndex, int size) {
+    private String buildAssetQuery(final ReportRequest reportRequest, int pageIndex, int size) {
         final StringBuilder query = new StringBuilder("SELECT ");
 
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.ledgerColumnMapping.get(displayableField.getName());
+            final String column = this.accountingColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
@@ -263,63 +255,68 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
 
         query.append(columns.stream().collect(Collectors.joining(", ")))
                 .append(" FROM ")
-                .append("thoth_ledgers ledger ");
+                .append("thoth_accounts acc ")
+                .append("WHERE acc.a_type = 'ASSET' ");
 
-        final List<QueryParameter> queryParameters = reportRequest.getQueryParameters();
-        if (!queryParameters.isEmpty()) {
-            final ArrayList<String> criteria = new ArrayList<>();
-            queryParameters.forEach(queryParameter -> {
-                if(queryParameter.getValue() != null && !queryParameter.getValue().isEmpty()) {
-                    criteria.add(
-                            CriteriaBuilder.buildCriteria(this.ledgerColumnMapping.get(queryParameter.getName()), queryParameter)
-                    );
-                }
-            });
-
-            if (!criteria.isEmpty()) {
-                query.append(" WHERE ");
-                query.append(criteria.stream().collect(Collectors.joining(" AND ")));
-            }
-
-        }
-        query.append(" ORDER BY ledger.identifier");
+        query.append(" ORDER BY acc.identifier");
 
         return query.toString();
     }
 
-    private String buildSubLedgerQuery(final ReportRequest reportRequest, final String ledgerIdentifier) {
+    private String buildLiabilityQuery(final ReportRequest reportRequest) {
+        final StringBuilder query = new StringBuilder("SELECT ");
+
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.ledgerColumnMapping.get(displayableField.getName());
+            final String column = this.accountingColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
         });
 
-        return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                "FROM thoth_ledgers ledger " +
-                "WHERE ledger.parent_ledger_id ='" + ledgerIdentifier + "' ";
+        query.append(columns.stream().collect(Collectors.joining(", ")))
+                .append(" FROM ")
+                .append("thoth_accounts acc ")
+                .append("WHERE acc.a_type = 'LIABILITY' ");
+
+        query.append(" ORDER BY acc.identifier");
+
+        return query.toString();
     }
 
+    private String buildEquityQuery(final ReportRequest reportRequest) {
+        final StringBuilder query = new StringBuilder("SELECT ");
 
-    private String buildAccountQuery(final ReportRequest reportRequest, final String parentLedgerIdentifier) {
         final List<DisplayableField> displayableFields = reportRequest.getDisplayableFields();
         final ArrayList<String> columns = new ArrayList<>();
         displayableFields.forEach(displayableField -> {
-            final String column = this.accountColumnMapping.get(displayableField.getName());
+            final String column = this.accountingColumnMapping.get(displayableField.getName());
             if (column != null) {
                 columns.add(column);
             }
         });
 
-        if (!columns.isEmpty()) {
-            return "SELECT " + columns.stream().collect(Collectors.joining(", ")) + " " +
-                    "FROM thoth_accounts acc " +
-                    "LEFT JOIN thoth_ledgers ledger on acc.ledger_id = ledger.id " +
-                    "WHERE ledger.id ='" + parentLedgerIdentifier + "' ";
-        }
-        return null;
+        query.append(columns.stream().collect(Collectors.joining(", ")))
+                .append(" FROM ")
+                .append("thoth_accounts acc ")
+                .append("WHERE acc.a_type = 'EQUITY' ");
+
+        query.append(" ORDER BY acc.identifier");
+
+        return query.toString();
     }
 
+    private List<DisplayableField> buildDisplayableFields() {
+        return Arrays.asList(
+                DisplayableFieldBuilder.create(TYPE, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(IDENTIFIER, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(NAME, Type.TEXT).mandatory().build(),
+                DisplayableFieldBuilder.create(BALANCE, Type.TEXT).mandatory().build()
+        );
+    }
+
+    private List<QueryParameter> buildQueryParameters() {
+        return Arrays.asList();
+    }
 }

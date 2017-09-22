@@ -180,7 +180,7 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
             rows.add(row);
         });
 
-        subRevenueTotal.setValues(new String[]{new StringBuilder().append("TOTAL REVENUES").append(revenueSubTotal[0]).toString()});
+        subRevenueTotal.setValues(new String[]{new StringBuilder().append("TOTAL REVENUES ").append(revenueSubTotal[0]).toString()});
         totalRevenueRow.getValues().add(subRevenueTotal);
 
         rows.add(totalRevenueRow);
@@ -229,7 +229,7 @@ public class IncomeStatementReportSpecification implements ReportSpecification {
             rows.add(row);
         });
 
-        subExpenseTotal.setValues(new String[]{new StringBuilder().append("TOTAL EXPENSES ").append(expenseSubTotal[0]).toString()});
+        subExpenseTotal.setValues(new String[]{" \t ", " \t ", "TOTAL EXPENSES ", new StringBuilder().append(expenseSubTotal[0]).toString()});
         totalExpenseRow.getValues().add(subExpenseTotal);
         rows.add(totalExpenseRow);
 
