@@ -144,12 +144,12 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
     private List<Row> buildRows(ReportRequest reportRequest, List<?> accountResultList) {
         final ArrayList<Row> rows = new ArrayList<>();
 
-        final Row totalRevenueRow = new Row();
-        totalRevenueRow.setValues(new ArrayList<>());
+        final Row totalAssetRow = new Row();
+        totalAssetRow.setValues(new ArrayList<>());
 
-        final Value subRevenueTotal = new Value();
+        final Value subAssetTotal = new Value();
 
-        final BigDecimal[] revenueSubTotal = {new BigDecimal("0.000")};
+        final BigDecimal[] assetSubTotal = {new BigDecimal("0.000")};
 
         accountResultList.forEach(result -> {
 
@@ -161,14 +161,14 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
                 resultValues = (Object[]) result;
 
                 for (int i = 0; i < resultValues.length; i++){
-                    final Value revValue = new Value();
+                    final Value assetValue = new Value();
                     if (resultValues[i] != null){
-                        revValue.setValues(new String[]{resultValues[i].toString()});
-                    }else revValue.setValues(new String[]{});
+                        assetValue.setValues(new String[]{resultValues[i].toString()});
+                    }else assetValue.setValues(new String[]{});
 
-                    row.getValues().add(revValue);
+                    row.getValues().add(assetValue);
 
-                    revenueSubTotal[0] = revenueSubTotal[0].add((BigDecimal)resultValues[3]);
+                    assetSubTotal[0] = assetSubTotal[0].add((BigDecimal)resultValues[3]);
 
                 }
             } else {
@@ -180,27 +180,23 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
             rows.add(row);
         });
 
-        subRevenueTotal.setValues(new String[]{new StringBuilder().append("TOTAL ASSETS ").append(revenueSubTotal[0]).toString()});
-        totalRevenueRow.getValues().add(subRevenueTotal);
+        subAssetTotal.setValues(new String[]{new StringBuilder().append("TOTAL ASSETS ").append(assetSubTotal[0]).toString()});
+        totalAssetRow.getValues().add(subAssetTotal);
 
-        rows.add(totalRevenueRow);
+        rows.add(totalAssetRow);
 
 
-        final String expenseQueryString = this.buildLiabilityQuery(reportRequest);
-        final Query expenseQuery = this.entityManager.createNativeQuery(expenseQueryString);
-        final List<?> expenseResultList = expenseQuery.getResultList();
+        final String liabilityQueryString = this.buildLiabilityQuery(reportRequest);
+        final Query liabilityQuery = this.entityManager.createNativeQuery(liabilityQueryString);
+        final List<?> liabilityResultList = liabilityQuery.getResultList();
 
-        final Row totalExpenseRow = new Row();
-        totalExpenseRow.setValues(new ArrayList<>());
-        final Value subExpenseTotal = new Value();
+        final Row totalLiabilityRow = new Row();
+        totalLiabilityRow.setValues(new ArrayList<>());
+        final Value subLiabilityTotal = new Value();
 
-        final Row netIncomeRow = new Row();
-        netIncomeRow.setValues(new ArrayList<>());
-        final Value netIncomeTotal = new Value();
+        final BigDecimal[] liabilitySubTotal = {new BigDecimal("0.000")};
 
-        final BigDecimal[] expenseSubTotal = {new BigDecimal("0.000")};
-
-        expenseResultList.forEach(result -> {
+        liabilityResultList.forEach(result -> {
 
             final Row row = new Row();
             row.setValues(new ArrayList<>());
@@ -210,13 +206,13 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
                 resultValues = (Object[]) result;
 
                 for (int i = 0; i < resultValues.length; i++){
-                    final Value expValue = new Value();
-                    if (resultValues[i] != null) expValue.setValues(new String[]{resultValues[i].toString()});
-                    else expValue.setValues(new String[]{});
+                    final Value liabilityValue = new Value();
+                    if (resultValues[i] != null) liabilityValue.setValues(new String[]{resultValues[i].toString()});
+                    else liabilityValue.setValues(new String[]{});
 
-                    row.getValues().add(expValue);
+                    row.getValues().add(liabilityValue);
 
-                    expenseSubTotal[0] = expenseSubTotal[0].add((BigDecimal)resultValues[3]);
+                    liabilitySubTotal[0] = liabilitySubTotal[0].add((BigDecimal)resultValues[3]);
 
                 }
             } else {
@@ -229,14 +225,64 @@ public class BalanceSheetReportSpecification implements ReportSpecification {
             rows.add(row);
         });
 
-        subExpenseTotal.setValues(new String[]{new StringBuilder().append("TOTAL LIABILITIES ").append(expenseSubTotal[0]).toString()});
-        totalExpenseRow.getValues().add(subExpenseTotal);
-        rows.add(totalExpenseRow);
+        subLiabilityTotal.setValues(new String[]{new StringBuilder().append("TOTAL LIABILITIES ").append(liabilitySubTotal[0]).toString()});
+        totalLiabilityRow.getValues().add(subLiabilityTotal);
+        rows.add(totalLiabilityRow);
 
-        final BigDecimal netIncome = revenueSubTotal[0].subtract(expenseSubTotal[0]);
-        netIncomeTotal.setValues(new String[]{new StringBuilder().append("TOTAL ASSETS and LIABILITIES ").append(netIncome).toString()});
-        netIncomeRow.getValues().add(netIncomeTotal);
-        rows.add(netIncomeRow);
+
+
+        final String equityQueryString = this.buildEquityQuery(reportRequest);
+        final Query equityQuery = this.entityManager.createNativeQuery(equityQueryString);
+        final List<?> equityResultList = equityQuery.getResultList();
+
+        final Row totalEquityRow = new Row();
+        totalEquityRow.setValues(new ArrayList<>());
+        final Value subEquityTotal = new Value();
+
+        final Row totalLiabilityAndEquityRow = new Row();
+        totalLiabilityAndEquityRow.setValues(new ArrayList<>());
+        final Value totalLiabilityAndEquityValue = new Value();
+
+        final BigDecimal[] equitySubTotal = {new BigDecimal("0.000")};
+
+        equityResultList.forEach(result -> {
+
+            final Row row = new Row();
+            row.setValues(new ArrayList<>());
+
+            if (result instanceof Object[]) {
+                final Object[] resultValues;
+                resultValues = (Object[]) result;
+
+                for (int i = 0; i < resultValues.length; i++){
+                    final Value equityValue = new Value();
+                    if (resultValues[i] != null) equityValue.setValues(new String[]{resultValues[i].toString()});
+                    else equityValue.setValues(new String[]{});
+
+                    row.getValues().add(equityValue);
+
+                    equitySubTotal[0] = equitySubTotal[0].add((BigDecimal)resultValues[3]);
+
+                }
+            } else {
+                final Value value;
+                value = new Value();
+                value.setValues(new String[]{result.toString()});
+                row.getValues().add(value);
+            }
+
+            rows.add(row);
+        });
+
+        subEquityTotal.setValues(new String[]{new StringBuilder().append("TOTAL EQUITY ").append(equitySubTotal[0]).toString()});
+        totalEquityRow.getValues().add(subEquityTotal);
+        rows.add(totalEquityRow);
+
+
+        final BigDecimal liabilityAndEquity = liabilitySubTotal[0].add(equitySubTotal[0]);
+        totalLiabilityAndEquityValue.setValues(new String[]{new StringBuilder().append("TOTAL LIABILITIES and EQUITY ").append(liabilityAndEquity).toString()});
+        totalLiabilityAndEquityRow.getValues().add(totalLiabilityAndEquityValue);
+        rows.add(totalLiabilityAndEquityRow);
 
         return rows;
     }
